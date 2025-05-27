@@ -8,160 +8,202 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
-            padding: 0;
-            margin: 0;
         }
-        
-        .hero-section {
-            background: linear-gradient(135deg, #13547a 0%, #80d0c7 100%);
-            color: white;
-            padding: 60px 0;
-            margin-bottom: 40px;
-        }
-        
-        .hero-section h1 {
-            font-size: 2.8rem;
-            font-weight: 700;
-        }
-        
-        .hero-section p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        
         .tool-card {
-            border-radius: 12px;
-            overflow: hidden;
-            transition: all 0.3s ease;
+            transition: transform 0.3s, box-shadow 0.3s;
             height: 100%;
-            border: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .tool-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-        
-        .card-img-container {
-            height: 180px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
+            flex-direction: column;
         }
-        
-        .fba-color {
-            background-color: #198754;
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .btn-outline-success:hover {
+            background-color: #28a745;
             color: white;
         }
-        
-        .sku-color {
-            background-color: #0d6efd;
-            color: white;
+        .user-info {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        
-        .card-body {
-            padding: 2rem 1.5rem;
-        }
-        
-        .btn-tool {
-            border-radius: 30px;
-            padding: 10px 25px;
-            font-weight: 600;
-            margin-top: 15px;
-            transition: all 0.2s;
-        }
-        
-        .btn-tool:hover {
-            transform: scale(1.05);
-        }
-        
-        .tool-description {
-            color: #6c757d;
-            height: 100px;
+        .history-card {
+            margin-top: 30px;
+            border-radius: 10px;
             overflow: hidden;
         }
-        
-        .footer {
-            margin-top: 60px;
-            padding: 20px 0;
-            background-color: #f1f1f1;
+        .history-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
         }
-        
-        @media (max-width: 768px) {
-            .hero-section {
-                padding: 40px 0;
-            }
-            
-            .hero-section h1 {
-                font-size: 2rem;
-            }
-            
-            .tool-card {
-                margin-bottom: 30px;
-            }
+        .history-body {
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background-color: #f8f9fa;
+        }
+        .history-item:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
 <body>
-    <div class="hero-section">
-        <div class="container text-center">
-            <h1>亚马逊卖家工具集</h1>
-            <p class="mt-3">一站式解决方案，助力您的亚马逊电商业务</p>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="row mb-5">
-            <div class="col-md-6 mb-4 mb-md-0">
-                <div class="tool-card">
-                    <div class="card-img-container fba-color">
-                        <i class="bi bi-calculator"></i>
-                    </div>
-                    <div class="card-body">
-                        <h3 class="card-title">FBA费用计算器</h3>
-                        <p class="tool-description">
-                            综合计算亚马逊FBA物流、仓储和佣金费用。支持多种尺寸规格和时间段，精准估算您的FBA成本，助您做出更明智的定价决策。
-                        </p>
-                        <div class="d-grid">
-                            <a href="fba.html" class="btn btn-success btn-tool">
-                                <i class="bi bi-arrow-right-circle me-2"></i>开始使用
+    <div class="container my-4">
+        <!-- 顶部导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">
+                    <i class="bi bi-house-door text-success me-2"></i>亚马逊卖家工具集
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="fba.html"><i class="bi bi-calculator me-1"></i> FBA费用计算器</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="sku.html"><i class="bi bi-upc-scan me-1"></i> SKU生成器</a>
+                        </li>
+                        <li class="nav-item" id="loginNavItem">
+                            <a class="nav-link" href="login.html"><i class="bi bi-box-arrow-in-right me-1"></i> 登录</a>
+                        </li>
+                        <li class="nav-item dropdown" id="userNavItem" style="display: none;">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i> <span id="userName">用户</span>
                             </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#" id="showHistory"><i class="bi bi-clock-history me-2"></i>历史记录</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- 欢迎区域 -->
+        <div class="jumbotron bg-white p-4 rounded shadow-sm mb-4">
+            <h1 class="display-5 text-success">欢迎使用亚马逊卖家工具集</h1>
+            <p class="lead">这是一套为亚马逊卖家设计的实用工具，帮助您轻松管理产品和计算费用。</p>
+            <div id="userWelcome" style="display: none;" class="alert alert-success mt-3">
+                欢迎回来！您现在可以保存计算结果和SKU历史记录。
+            </div>
+        </div>
+        
+        <!-- 工具卡片区域 -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-4">
+                <div class="card tool-card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calculator card-icon text-success"></i>
+                        <h3 class="card-title">FBA费用计算器</h3>
+                        <p class="card-text">计算亚马逊FBA的配送费、仓储费和销售佣金，全面了解您的运营成本。</p>
+                        <div class="mt-auto">
+                            <a href="fba.html" class="btn btn-success btn-lg w-100">开始计算</a>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-6">
-                <div class="tool-card">
-                    <div class="card-img-container sku-color">
-                        <i class="bi bi-upc-scan"></i>
-                    </div>
-                    <div class="card-body">
+            <div class="col-md-6 mb-4">
+                <div class="card tool-card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-upc-scan card-icon text-primary"></i>
                         <h3 class="card-title">SKU生成器</h3>
-                        <p class="tool-description">
-                            便捷生成和管理产品SKU编码。支持多种类别、颜色、尺寸和人群组合，自动创建父SKU和子变体，轻松导出结果。
-                        </p>
-                        <div class="d-grid">
-                            <a href="sku.html" class="btn btn-primary btn-tool">
-                                <i class="bi bi-arrow-right-circle me-2"></i>开始使用
-                            </a>
+                        <p class="card-text">快速生成规范的SKU编码，帮助您更好地管理产品库存和跟踪销售情况。</p>
+                        <div class="mt-auto">
+                            <a href="sku.html" class="btn btn-primary btn-lg w-100">生成SKU</a>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 历史记录区域 -->
+        <div id="historySection" style="display: none;" class="mb-4">
+            <div class="card history-card">
+                <div class="history-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">最近记录</h4>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" id="toggleSkuHistory">SKU历史</button>
+                        <button class="btn btn-sm btn-outline-secondary" id="toggleCalcHistory">计算历史</button>
+                        <button class="btn btn-sm btn-danger" id="closeHistory">关闭</button>
+                    </div>
+                </div>
+                <div class="history-body" id="historyContent">
+                    <!-- 历史记录内容将通过JavaScript动态加载 -->
+                    <div class="text-center py-4" id="historyLoading">
+                        <div class="spinner-border text-secondary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">加载历史记录...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 提示信息 -->
+        <div class="card bg-light border-0 p-4 mb-4">
+            <div class="card-body">
+                <h5><i class="bi bi-lightbulb-fill text-warning me-2"></i>使用提示</h5>
+                <ul class="mb-0">
+                    <li>登录账户后，您可以保存计算结果和生成的SKU</li>
+                    <li>通过历史记录功能，随时查看和重用之前的数据</li>
+                    <li>所有数据都存储在云端，可以在不同设备上访问</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 底部区域 -->
+        <footer class="text-center text-muted py-3">
+            <p>亚马逊卖家工具集 &copy; 2023 | <a href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">关于</a></p>
+        </footer>
+    </div>
+    
+    <!-- 关于模态框 -->
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="aboutModalLabel">关于亚马逊卖家工具集</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>亚马逊卖家工具集是一套为亚马逊卖家设计的实用工具，包括FBA费用计算器和SKU生成器。</p>
+                    <p>这些工具可以帮助您：</p>
+                    <ul>
+                        <li>准确计算FBA物流配送费、仓储费和销售佣金</li>
+                        <li>快速生成规范的SKU编码</li>
+                        <li>保存和管理您的计算历史和SKU记录</li>
+                    </ul>
+                    <p>如有问题或建议，请联系我们。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
                 </div>
             </div>
         </div>
     </div>
     
-    <footer class="footer text-center">
-        <div class="container">
-            <p class="mb-0">© 2025.5.27 亚马逊卖家工具集 </p>
-        </div>
-    </footer>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="index.js"></script>
 </body>
 </html> 

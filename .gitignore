@@ -1,30 +1,36 @@
-# Logs
-logs
-*.log
+# 依赖
+node_modules/
+
+# 构建产物
+build/
+dist/
+coverage/
+
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE和编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 日志
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+logs/
+*.log
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
+# Firebase配置（可选 - 如果有单独的开发配置文件）
+# firebase-config.dev.js
 
-/cypress/videos/
-/cypress/screenshots/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-*.tsbuildinfo
+# 临时文件
+temp/
+tmp/

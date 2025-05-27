@@ -1,19 +1,45 @@
 {
-  "name": "untitled",
-  "version": "0.0.0",
+  "name": "amazon-seller-toolkit",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "http-server -p 3000",
+    "deploy": "node deploy.js",
+    "firebase-init": "node firebase-init.js",
+    "init-firebase": "firebase init",
+    "deploy-firebase": "firebase deploy"
   },
   "dependencies": {
+    "firebase": "^9.22.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
     "vite": "^6.2.4",
-    "vite-plugin-vue-devtools": "^7.7.2"
-  }
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "http-server": "^14.1.1"
+  },
+  "description": "这是一个为亚马逊卖家设计的实用工具集，包括FBA费用计算器和SKU生成器。该项目使用纯前端技术构建，结合Firebase实现数据存储和用户管理功能。",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuziii7/sku.git"
+  },
+  "keywords": [
+    "amazon",
+    "fba",
+    "sku",
+    "calculator",
+    "firebase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yuziii7/sku/issues"
+  },
+  "homepage": "https://github.com/yuziii7/sku#readme"
 }

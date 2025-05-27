@@ -37,413 +37,298 @@
         
         <h1 class="text-center mb-4 text-success">FBA综合费用计算器</h1>
         
-        <!-- 选项卡导航 -->
-        <ul class="nav nav-tabs mb-4" id="calculatorTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-pane" type="button" role="tab" aria-controls="all-pane" aria-selected="true">全部计算器</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="shipping-tab" data-bs-toggle="tab" data-bs-target="#shipping-pane" type="button" role="tab" aria-controls="shipping-pane" aria-selected="false">物流配送费</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="storage-tab" data-bs-toggle="tab" data-bs-target="#storage-pane" type="button" role="tab" aria-controls="storage-pane" aria-selected="false">仓储费用</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="commission-tab" data-bs-toggle="tab" data-bs-target="#commission-pane" type="button" role="tab" aria-controls="commission-pane" aria-selected="false">佣金计算</button>
-            </li>
-        </ul>
-        
-        <div class="tab-content" id="calculatorTabContent">
-            <!-- 全部计算器视图 -->
-            <div class="tab-pane fade show active" id="all-pane" role="tabpanel" aria-labelledby="all-tab">
-                <div class="row mb-4">
-                    <!-- 物流配送费计算 -->
-                    <div class="col-md-4">
-                        <div class="card h-100 border-success">
-                            <div class="card-header bg-success text-white">
-                                <h5 class="mb-0">物流配送费计算</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- 物流配送表单 -->
-                                <div class="mb-3">
-                                    <label for="length" class="form-label">长度（厘米）</label>
-                                    <input type="number" class="form-control" id="length" min="0" step="0.01">
+        <!-- 滑动容器 -->
+        <div class="slider-container">
+            <div class="slider-wrapper" id="sliderWrapper">
+                <!-- 第一屏：综合计算器 -->
+                <div class="slide">
+                    <!-- 综合计算器视图 -->
+                    <div class="row mb-4">
+                        <!-- 物流配送费计算 -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">物流配送费计算</h5>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="width" class="form-label">宽度（厘米）</label>
-                                    <input type="number" class="form-control" id="width" min="0" step="0.01">
+                                <div class="card-body">
+                                    <!-- 物流配送表单 -->
+                                    <div class="mb-3">
+                                        <label for="length" class="form-label">长度（厘米）</label>
+                                        <input type="number" class="form-control" id="length" min="0" step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="width" class="form-label">宽度（厘米）</label>
+                                        <input type="number" class="form-control" id="width" min="0" step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="height" class="form-label">高度（厘米）</label>
+                                        <input type="number" class="form-control" id="height" min="0" step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="weight" class="form-label">实际重量（克）</label>
+                                        <input type="number" class="form-control" id="weight" min="0" step="0.1">
+                                    </div>
+                                    <button id="calculateShipping" class="btn btn-success w-100">计算配送费用</button>
+                                    
+                                    <div class="mt-3 result-area" id="shippingResult">
+                                        <!-- 结果将在这里显示 -->
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="height" class="form-label">高度（厘米）</label>
-                                    <input type="number" class="form-control" id="height" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="weight" class="form-label">实际重量（克）</label>
-                                    <input type="number" class="form-control" id="weight" min="0" step="0.1">
-                                </div>
-                                <button id="calculateShipping" class="btn btn-success w-100">计算配送费用</button>
-                                
-                                <div class="mt-3 result-area" id="shippingResult">
-                                    <!-- 结果将在这里显示 -->
+                                <div class="card-footer bg-light">
+                                    <small>小号物件：长度≤15英寸，重量≤16盎司</small>
                                 </div>
                             </div>
-                            <div class="card-footer bg-light">
-                                <small>小号物件：长度≤15英寸，重量≤16盎司</small>
+                        </div>
+                        
+                        <!-- 仓储费用计算 -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0">仓储费用计算</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- 仓储费用表单 -->
+                                    <div class="mb-3">
+                                        <label for="storageLength" class="form-label">装箱长度（厘米）</label>
+                                        <input type="number" class="form-control" id="storageLength" min="0" step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="storageWidth" class="form-label">装箱宽度（厘米）</label>
+                                        <input type="number" class="form-control" id="storageWidth" min="0" step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="storageHeight" class="form-label">装箱高度（厘米）</label>
+                                        <input type="number" class="form-control" id="storageHeight" min="0" step="0.01">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="startDate" class="form-label">开始日期</label>
+                                            <input type="date" class="form-control" id="startDate">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="endDate" class="form-label">结束日期</label>
+                                            <input type="date" class="form-control" id="endDate">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="quantity" class="form-label">装箱商品数量</label>
+                                        <input type="number" class="form-control" id="quantity" min="1" step="1" value="1">
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button id="calculateStorage" class="btn btn-warning">计算全部仓储费用</button>
+                                        <button id="calculateBaseStorage" class="btn btn-outline-warning">仅计算基础仓储费</button>
+                                    </div>
+                                    
+                                    <div class="mt-3 result-area" id="storageResult">
+                                        <!-- 结果将在这里显示 -->
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <small>1-9月：$0.78/立方英尺；10-12月：$2.4/立方英尺</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 佣金计算 -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">佣金计算</h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- 佣金计算表单 -->
+                                    <div class="mb-3">
+                                        <label for="price" class="form-label">商品售价（美元）</label>
+                                        <input type="number" class="form-control" id="price" min="0" step="0.01">
+                                    </div>
+                                    <button id="calculateCommission" class="btn btn-info text-white w-100">计算佣金费用</button>
+                                    
+                                    <div class="mt-3 result-area" id="commissionResult">
+                                        <!-- 结果将在这里显示 -->
+                                    </div>
+                                    
+                                    <div class="mt-4 info-box">
+                                        <h6>佣金费用计算规则：</h6>
+                                        <ul class="small">
+                                            <li>商品价格 ≤ $15.00: 收取5%佣金</li>
+                                            <li>商品价格 $15.01-$20.00: 收取10%佣金</li>
+                                            <li>商品价格 > $20.00: 收取17%佣金</li>
+                                            <li>最低佣金为$0.30</li>
+                                            <li>每件商品附加$0.99固定手续费</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- 仓储费用计算 -->
-                    <div class="col-md-4">
-                        <div class="card h-100 border-warning">
-                            <div class="card-header bg-warning text-dark">
-                                <h5 class="mb-0">仓储费用计算</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- 仓储费用表单 -->
-                                <div class="mb-3">
-                                    <label for="storageLength" class="form-label">装箱长度（厘米）</label>
-                                    <input type="number" class="form-control" id="storageLength" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="storageWidth" class="form-label">装箱宽度（厘米）</label>
-                                    <input type="number" class="form-control" id="storageWidth" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="storageHeight" class="form-label">装箱高度（厘米）</label>
-                                    <input type="number" class="form-control" id="storageHeight" min="0" step="0.01">
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="startDate" class="form-label">开始日期</label>
-                                        <input type="date" class="form-control" id="startDate">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="endDate" class="form-label">结束日期</label>
-                                        <input type="date" class="form-control" id="endDate">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="quantity" class="form-label">装箱商品数量</label>
-                                    <input type="number" class="form-control" id="quantity" min="1" step="1" value="1">
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button id="calculateStorage" class="btn btn-warning">计算全部仓储费用</button>
-                                    <button id="calculateBaseStorage" class="btn btn-outline-warning">仅计算基础仓储费</button>
-                                </div>
-                                
-                                <div class="mt-3 result-area" id="storageResult">
-                                    <!-- 结果将在这里显示 -->
-                                </div>
-                            </div>
-                            <div class="card-footer bg-light">
-                                <small>1-9月：$0.78/立方英尺；10-12月：$2.4/立方英尺</small>
+                    <!-- 总费用计算区域 -->
+                    <div class="card border-danger mb-4">
+                        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">总费用计算</h5>
+                            <div>
+                                <button id="calculateTotal" class="btn btn-sm btn-light me-2">计算总费用</button>
+                                <button id="clearAll" class="btn btn-sm btn-outline-light">清除所有费用</button>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- 佣金计算 -->
-                    <div class="col-md-4">
-                        <div class="card h-100 border-info">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="mb-0">佣金计算</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- 佣金计算表单 -->
-                                <div class="mb-3">
-                                    <label for="price" class="form-label">商品售价（美元）</label>
-                                    <input type="number" class="form-control" id="price" min="0" step="0.01">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="fee-box">
+                                        <h6>物流配送费用</h6>
+                                        <div class="h4 text-success">$<span id="shippingFee">0.00</span></div>
+                                    </div>
                                 </div>
-                                <button id="calculateCommission" class="btn btn-info text-white w-100">计算佣金费用</button>
-                                
-                                <div class="mt-3 result-area" id="commissionResult">
-                                    <!-- 结果将在这里显示 -->
+                                <div class="col-md-3">
+                                    <div class="fee-box">
+                                        <h6>仓储费用</h6>
+                                        <div class="h4 text-warning">$<span id="storageFee">0.00</span></div>
+                                    </div>
                                 </div>
-                                
-                                <div class="mt-4 info-box">
-                                    <h6>佣金费用计算规则：</h6>
-                                    <ul class="small">
-                                        <li>商品价格 ≤ $15.00: 收取5%佣金</li>
-                                        <li>商品价格 $15.01-$20.00: 收取10%佣金</li>
-                                        <li>商品价格 > $20.00: 收取17%佣金</li>
-                                        <li>最低佣金为$0.30</li>
-                                        <li>每件商品附加$0.99固定手续费</li>
-                                    </ul>
+                                <div class="col-md-3">
+                                    <div class="fee-box">
+                                        <h6>佣金及手续费</h6>
+                                        <div class="h4 text-info">$<span id="commissionFee">0.00</span></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="fee-box total-fee">
+                                        <h6>总费用</h6>
+                                        <div class="h3 text-danger">$<span id="totalFee">0.00</span></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 总费用计算区域 -->
-                <div class="card border-danger mb-4">
-                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">总费用计算</h5>
-                        <div>
-                            <button id="calculateTotal" class="btn btn-sm btn-light me-2">计算总费用</button>
-                            <button id="clearAll" class="btn btn-sm btn-outline-light">清除所有费用</button>
+                <!-- 第二屏：费用计算规则 -->
+                <div class="slide">
+                    <!-- 费用计算规则详情 -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">费用计算详细规则</h5>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="fee-box">
-                                    <h6>物流配送费用</h6>
-                                    <div class="h4 text-success">$<span id="shippingFee">0.00</span></div>
+                        <div class="card-body">
+                            <!-- 物流配送费规则 -->
+                            <h5 class="border-bottom pb-2 text-success">物流配送费规则</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h6>小号物件价格表 (Small Standard)</h6>
+                                    <p class="small mb-2">小号物件标准：长度≤15英寸，最长边≤12英寸，最短边≤0.75英寸，重量≤16盎司</p>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>重量</th>
+                                                <th>价格</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>≤ 4 oz</td><td>$3.27</td></tr>
+                                            <tr><td>4.1-8 oz</td><td>$3.42</td></tr>
+                                            <tr><td>8.1-12 oz</td><td>$3.72</td></tr>
+                                            <tr><td>12.1-16 oz</td><td>$3.98</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>大号物件价格表 (Large Standard)</h6>
+                                    <p class="small mb-2">大号物件标准：不符合小号物件标准的包裹</p>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>重量</th>
+                                                <th>价格</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>≤ 4 oz</td><td>$4.25</td></tr>
+                                            <tr><td>4.1-8 oz</td><td>$4.45</td></tr>
+                                            <tr><td>8.1-12 oz</td><td>$4.67</td></tr>
+                                            <tr><td>12.1-16 oz</td><td>$5.12</td></tr>
+                                            <tr><td>16.1-24 oz</td><td>$5.90</td></tr>
+                                            <tr><td>24.1-32 oz</td><td>$6.14</td></tr>
+                                            <tr><td>32.1-40 oz</td><td>$6.60</td></tr>
+                                            <tr><td>40.1-48 oz</td><td>$6.81</td></tr>
+                                            <tr><td>> 48 oz</td><td>$6.92 + $0.16/0.5lb</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="fee-box">
-                                    <h6>仓储费用</h6>
-                                    <div class="h4 text-warning">$<span id="storageFee">0.00</span></div>
+                            
+                            <!-- 仓储费规则 -->
+                            <h5 class="border-bottom pb-2 text-warning">仓储费用规则</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h6>基础仓储费率</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>月份</th>
+                                                <th>费率 (立方英尺/月)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>1-9月</td><td>$0.78</td></tr>
+                                            <tr><td>10-12月</td><td>$2.40</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>长期存储附加费</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>存储时间</th>
+                                                <th>附加费 (立方英尺)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>22-28周</td><td>$0.44</td></tr>
+                                            <tr><td>28-36周</td><td>$0.76</td></tr>
+                                            <tr><td>36-44周</td><td>$1.16</td></tr>
+                                            <tr><td>44-52周</td><td>$1.58</td></tr>
+                                            <tr><td>≥ 52周</td><td>$1.88</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="fee-box">
-                                    <h6>佣金及手续费</h6>
-                                    <div class="h4 text-info">$<span id="commissionFee">0.00</span></div>
+                            
+                            <!-- 佣金规则 -->
+                            <h5 class="border-bottom pb-2 text-info">佣金计算规则</h5>
+                            <div class="row justify-content-center mb-2">
+                                <div class="col-md-8">
+                                    <h6 class="text-center">佣金费率表</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>商品价格</th>
+                                                <th>佣金比例</th>
+                                                <th>最低佣金</th>
+                                                <th>固定手续费</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>≤ $15.00</td><td>5%</td><td>$0.30</td><td>$0.99</td></tr>
+                                            <tr><td>$15.01-$20.00</td><td>10%</td><td>$0.30</td><td>$0.99</td></tr>
+                                            <tr><td>> $20.00</td><td>17%</td><td>$0.30</td><td>$0.99</td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="fee-box total-fee">
-                                    <h6>总费用</h6>
-                                    <div class="h3 text-danger">$<span id="totalFee">0.00</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 单独选项卡内容 -->
-            <div class="tab-pane fade" id="shipping-pane" role="tabpanel" aria-labelledby="shipping-tab">
-                <div class="card border-success">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">物流配送费详细计算</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="shipping-length" class="form-label">长度（厘米）</label>
-                                    <input type="number" class="form-control" id="shipping-length" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="shipping-width" class="form-label">宽度（厘米）</label>
-                                    <input type="number" class="form-control" id="shipping-width" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="shipping-height" class="form-label">高度（厘米）</label>
-                                    <input type="number" class="form-control" id="shipping-height" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="shipping-weight" class="form-label">实际重量（克）</label>
-                                    <input type="number" class="form-control" id="shipping-weight" min="0" step="0.1">
-                                </div>
-                                <button id="shipping-calculate" class="btn btn-success w-100">计算配送费用</button>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="result-area h-100" id="shipping-detailed-result">
-                                    <!-- 详细结果将在这里显示 -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-light">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>小号物件价格表 (Small Standard)</h6>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>重量</th>
-                                            <th>价格</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>≤ 4 oz</td><td>$3.27</td></tr>
-                                        <tr><td>4.1-8 oz</td><td>$3.42</td></tr>
-                                        <tr><td>8.1-12 oz</td><td>$3.72</td></tr>
-                                        <tr><td>12.1-16 oz</td><td>$3.98</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>大号物件价格表 (Large Standard)</h6>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>重量</th>
-                                            <th>价格</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>≤ 4 oz</td><td>$4.25</td></tr>
-                                        <tr><td>4.1-8 oz</td><td>$4.45</td></tr>
-                                        <tr><td>8.1-12 oz</td><td>$4.67</td></tr>
-                                        <tr><td>12.1-16 oz</td><td>$5.12</td></tr>
-                                        <tr><td>16.1-24 oz</td><td>$5.90</td></tr>
-                                        <tr><td>24.1-32 oz</td><td>$6.14</td></tr>
-                                        <tr><td>32.1-40 oz</td><td>$6.60</td></tr>
-                                        <tr><td>40.1-48 oz</td><td>$6.81</td></tr>
-                                        <tr><td>> 48 oz</td><td>$6.92 + $0.16/0.5lb</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tab-pane fade" id="storage-pane" role="tabpanel" aria-labelledby="storage-tab">
-                <div class="card border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">仓储费用详细计算</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <!-- 仓储费用表单 -->
-                                <div class="mb-3">
-                                    <label for="detail-storageLength" class="form-label">装箱长度（厘米）</label>
-                                    <input type="number" class="form-control" id="detail-storageLength" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="detail-storageWidth" class="form-label">装箱宽度（厘米）</label>
-                                    <input type="number" class="form-control" id="detail-storageWidth" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="detail-storageHeight" class="form-label">装箱高度（厘米）</label>
-                                    <input type="number" class="form-control" id="detail-storageHeight" min="0" step="0.01">
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="detail-startDate" class="form-label">开始日期</label>
-                                        <input type="date" class="form-control" id="detail-startDate">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="detail-endDate" class="form-label">结束日期</label>
-                                        <input type="date" class="form-control" id="detail-endDate">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="detail-quantity" class="form-label">装箱商品数量</label>
-                                    <input type="number" class="form-control" id="detail-quantity" min="1" step="1" value="1">
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button id="detail-calculateStorage" class="btn btn-warning">计算全部仓储费用</button>
-                                    <button id="detail-calculateBaseStorage" class="btn btn-outline-warning">仅计算基础仓储费</button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="result-area h-100" id="storage-detailed-result">
-                                    <!-- 详细结果将在这里显示 -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-light">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>基础仓储费率</h6>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>月份</th>
-                                            <th>费率 (立方英尺/月)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>1-9月</td><td>$0.78</td></tr>
-                                        <tr><td>10-12月</td><td>$2.40</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>长期存储附加费</h6>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>存储时间</th>
-                                            <th>附加费 (立方英尺)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>22-28周</td><td>$0.44</td></tr>
-                                        <tr><td>28-36周</td><td>$0.76</td></tr>
-                                        <tr><td>36-44周</td><td>$1.16</td></tr>
-                                        <tr><td>44-52周</td><td>$1.58</td></tr>
-                                        <tr><td>≥ 52周</td><td>$1.88</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="tab-pane fade" id="commission-pane" role="tabpanel" aria-labelledby="commission-tab">
-                <div class="card border-info">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">佣金详细计算</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <!-- 佣金计算表单 -->
-                                <div class="mb-3">
-                                    <label for="detail-price" class="form-label">商品售价（美元）</label>
-                                    <input type="number" class="form-control" id="detail-price" min="0" step="0.01">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="detail-quantity-commission" class="form-label">商品数量</label>
-                                    <input type="number" class="form-control" id="detail-quantity-commission" min="1" step="1" value="1">
-                                </div>
-                                <button id="detail-calculateCommission" class="btn btn-info text-white w-100">计算佣金费用</button>
-                                
-                                <div class="mt-4 info-box">
-                                    <h6>佣金费用计算规则：</h6>
-                                    <ul class="small">
-                                        <li>商品价格 ≤ $15.00: 收取5%佣金</li>
-                                        <li>商品价格 $15.01-$20.00: 收取10%佣金</li>
-                                        <li>商品价格 > $20.00: 收取17%佣金</li>
-                                        <li>最低佣金为$0.30</li>
-                                        <li>每件商品附加$0.99固定手续费</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="result-area h-100" id="commission-detailed-result">
-                                    <!-- 详细结果将在这里显示 -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-light">
-                        <div class="row justify-content-center">
-                            <div class="col-md-8">
-                                <h6 class="text-center">佣金费率表</h6>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>商品价格</th>
-                                            <th>佣金比例</th>
-                                            <th>最低佣金</th>
-                                            <th>固定手续费</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>≤ $15.00</td><td>5%</td><td>$0.30</td><td>$0.99</td></tr>
-                                        <tr><td>$15.01-$20.00</td><td>10%</td><td>$0.30</td><td>$0.99</td></tr>
-                                        <tr><td>> $20.00</td><td>17%</td><td>$0.30</td><td>$0.99</td></tr>
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- 滑动按钮 - 移至滑动容器之后 -->
+        <button class="slide-button btn-rules" id="slideToRules">
+            <i class="bi bi-info-circle-fill"></i>查看费用规则
+        </button>
+        <button class="slide-button btn-calculator" id="slideToCalculator">
+            <i class="bi bi-calculator-fill"></i>返回计算器
+        </button>
         
         <!-- 底部的关于区域 -->
         <div class="text-center mt-4">
