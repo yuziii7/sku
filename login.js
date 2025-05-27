@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerError = document.getElementById('registerError');
     const registerSuccess = document.getElementById('registerSuccess');
     const anonymousLoginBtn = document.getElementById('anonymousLoginBtn');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
     
     // 正确初始化模态框
     let loadingModal;
@@ -161,6 +162,56 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('匿名登录失败:', error);
         }
     });
+    
+    // Admin快速登录
+    if (adminLoginBtn) {
+        adminLoginBtn.addEventListener('click', async function() {
+            try {
+                // 填充表单
+                document.getElementById('loginEmail').value = 'admin';
+                document.getElementById('loginPassword').value = 'admin';
+                
+                // 显示加载中
+                showLoading('登录中，请稍候...');
+                
+                // 调用登录方法
+                const result = await auth.signIn('admin', 'admin');
+                
+                // 隐藏加载中
+                hideLoading();
+                
+                if (result.success) {
+                    // 登录成功，重定向到首页或来源页面
+                    redirectAfterAuth();
+                } else {
+                    // 登录失败，显示错误信息
+                    showError(loginError, result.message || 'Admin登录失败，可能是账户尚未创建');
+                }
+            } catch (error) {
+                hideLoading();
+                showError(loginError, error.message || 'Admin登录过程中发生错误');
+                console.error('Admin登录失败:', error);
+            }
+        });
+    }
+    
+    // 表单切换
+    const showRegisterBtn = document.getElementById('showRegister');
+    const showLoginBtn = document.getElementById('showLogin');
+    
+    if (showRegisterBtn) {
+        showRegisterBtn.addEventListener('click', function() {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+        });
+    }
+    
+    if (showLoginBtn) {
+        showLoginBtn.addEventListener('click', function() {
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        });
+    }
     
     // 检查用户是否已登录，如果已登录则重定向
     if (auth.currentUser) {

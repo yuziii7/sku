@@ -45,13 +45,14 @@
                 <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
                 <h2 class="mt-2">亚马逊卖家工具集</h2>
                 <p class="text-muted">登录您的账户以保存和管理数据</p>
+                <p class="small text-info">支持任意用户名格式，不限于邮箱</p>
             </div>
 
             <!-- 登录表单 -->
             <form id="loginForm">
                 <div class="mb-3">
-                    <label for="loginEmail" class="form-label">电子邮箱</label>
-                    <input type="email" class="form-control" id="loginEmail" required>
+                    <label for="loginEmail" class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="loginEmail" required>
                 </div>
                 <div class="mb-3">
                     <label for="loginPassword" class="form-label">密码</label>
@@ -59,6 +60,9 @@
                 </div>
                 <div class="d-grid">
                     <button type="submit" class="btn btn-success">登录</button>
+                </div>
+                <div class="text-center mt-3">
+                    <button type="button" id="adminLoginBtn" class="btn btn-sm btn-outline-secondary">使用Admin账户登录</button>
                 </div>
                 <div class="text-center form-footer">
                     <p>还没有账户？<span id="showRegister" class="toggle-form">立即注册</span></p>
@@ -68,8 +72,8 @@
             <!-- 注册表单 -->
             <form id="registerForm" style="display: none;">
                 <div class="mb-3">
-                    <label for="registerEmail" class="form-label">电子邮箱</label>
-                    <input type="email" class="form-control" id="registerEmail" required>
+                    <label for="registerEmail" class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="registerEmail" required>
                 </div>
                 <div class="mb-3">
                     <label for="registerPassword" class="form-label">密码</label>

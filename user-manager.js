@@ -37,7 +37,10 @@ class UserManager {
       }
       
       // 确保用户表已创建
-      this._createUserTable().catch(err => {
+      this._createUserTable().then(() => {
+        // 创建默认的admin账户
+        this._createAdminUser();
+      }).catch(err => {
         console.error('初始化用户表失败:', err);
       });
     } catch (error) {
@@ -81,20 +84,57 @@ class UserManager {
     `);
   }
 
-  // 注册新用户
-  async registerUser(email, password, displayName = '') {
+  // 创建admin测试账户
+  async _createAdminUser() {
     try {
-      console.log('开始注册用户:', email);
+      // 检查admin账户是否已存在
+      const existingAdmin = await sqliteManager.exec(
+        'SELECT * FROM users WHERE email = ?', 
+        ['admin']
+      );
+      
+      // 如果已存在，不需要再创建
+      if (existingAdmin.length > 0) {
+        console.log('Admin测试账户已存在');
+        return;
+      }
+      
+      // 创建admin账户
+      const uid = 'admin_' + Math.random().toString(36).substr(2, 9);
+      const timestamp = getCurrentTimestamp();
+      
+      console.log('创建Admin测试账户...');
+      
+      // 将用户信息存入数据库
+      const result = await sqliteManager.run(
+        'INSERT INTO users (uid, email, displayName, password, isAnonymous, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [uid, 'admin', 'Admin用户', 'admin', 0, timestamp]
+      );
+      
+      if (result.success) {
+        console.log('Admin测试账户创建成功');
+      } else {
+        console.error('创建Admin测试账户失败:', result.message);
+      }
+    } catch (error) {
+      console.error('创建Admin测试账户出错:', error);
+    }
+  }
+
+  // 注册新用户
+  async registerUser(username, password, displayName = '') {
+    try {
+      console.log('开始注册用户:', username);
       await this._createUserTable();
       
-      // 检查邮箱是否已注册
+      // 检查用户名是否已注册
       const existingUser = await sqliteManager.exec(
         'SELECT * FROM users WHERE email = ?', 
-        [email]
+        [username]
       );
       
       if (existingUser.length > 0) {
-        throw new Error('该邮箱已被注册');
+        throw new Error('该用户名已被注册');
       }
       
       // 生成用户ID
@@ -106,7 +146,7 @@ class UserManager {
       // 将用户信息存入数据库
       const result = await sqliteManager.run(
         'INSERT INTO users (uid, email, displayName, password, isAnonymous, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
-        [uid, email, displayName, password, 0, timestamp]
+        [uid, username, displayName || username, password, 0, timestamp]
       );
       
       if (!result.success) {
@@ -118,8 +158,8 @@ class UserManager {
       // 创建用户对象
       this.currentUser = new User({
         uid,
-        email,
-        displayName,
+        email: username,
+        displayName: displayName || username,
         isAnonymous: false,
         createdAt: timestamp
       });
@@ -141,18 +181,18 @@ class UserManager {
   }
 
   // 用户登录
-  async signIn(email, password) {
+  async signIn(username, password) {
     try {
       await this._createUserTable();
       
       // 查询用户
       const users = await sqliteManager.exec(
         'SELECT * FROM users WHERE email = ? AND password = ?',
-        [email, password]
+        [username, password]
       );
       
       if (users.length === 0) {
-        throw new Error('邮箱或密码不正确');
+        throw new Error('用户名或密码不正确');
       }
       
       const userData = users[0];
@@ -161,7 +201,7 @@ class UserManager {
       this.currentUser = new User({
         uid: userData.uid,
         email: userData.email,
-        displayName: userData.displayName,
+        displayName: userData.displayName || userData.email,
         isAnonymous: userData.isAnonymous === 1,
         createdAt: userData.createdAt
       });
