@@ -1,0 +1,90 @@
+/* 全局样式 */
+body {
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* 按钮样式 */
+.btn-xs {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.75rem;
+}
+
+/* 卡片样式 */
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+/* SKU结果样式 */
+.sku-results-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+#skuResults {
+    min-height: 100px;
+}
+
+#skuResults .sku-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#skuResults .sku-item:hover {
+    background-color: #f1f3f5;
+    cursor: pointer;
+}
+
+#skuResults .sku-item:last-child {
+    border-bottom: none;
+}
+
+/* 颜色选项样式 */
+.color-option {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+/* 尺码和人群选项样式 */
+.option-checkbox {
+    margin-right: 15px;
+    margin-bottom: 8px;
+}
+
+/* 结果高亮效果 */
+@keyframes highlight {
+    0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+}
+
+.highlight {
+    animation: highlight 1s ease-in-out;
+}
+
+/* 复制成功提示 */
+.copy-success {
+    color: #198754;
+    transition: opacity 1s ease-in-out;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .row.mb-3 .col-md-2 {
+        margin-bottom: 0.5rem;
+    }
+} 
