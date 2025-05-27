@@ -58,6 +58,7 @@
                     <label for="loginPassword" class="form-label">密码</label>
                     <input type="password" class="form-control" id="loginPassword" required>
                 </div>
+                <div class="alert alert-danger" id="loginError" style="display: none;"></div>
                 <div class="d-grid">
                     <button type="submit" class="btn btn-success">登录</button>
                 </div>
@@ -76,6 +77,10 @@
                     <input type="text" class="form-control" id="registerEmail" required>
                 </div>
                 <div class="mb-3">
+                    <label for="registerName" class="form-label">显示名称</label>
+                    <input type="text" class="form-control" id="registerName">
+                </div>
+                <div class="mb-3">
                     <label for="registerPassword" class="form-label">密码</label>
                     <input type="password" class="form-control" id="registerPassword" required>
                 </div>
@@ -83,6 +88,8 @@
                     <label for="confirmPassword" class="form-label">确认密码</label>
                     <input type="password" class="form-control" id="confirmPassword" required>
                 </div>
+                <div class="alert alert-danger" id="registerError" style="display: none;"></div>
+                <div class="alert alert-success" id="registerSuccess" style="display: none;"></div>
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-primary" id="registerBtn">注册</button>
                 </div>
@@ -95,6 +102,20 @@
 
             <div class="text-center mt-4">
                 <a href="index.html" class="text-muted small">不登录，直接进入 <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载中模态框 -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <h5 id="loadingMessage">处理中，请稍候...</h5>
+                </div>
             </div>
         </div>
     </div>

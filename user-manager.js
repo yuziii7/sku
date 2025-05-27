@@ -70,23 +70,33 @@ class UserManager {
 
   // 创建用户数据库表
   async _createUserTable() {
-    await sqliteManager.init();
-    
-    await sqliteManager.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        uid TEXT PRIMARY KEY,
-        email TEXT UNIQUE,
-        displayName TEXT,
-        password TEXT,
-        isAnonymous INTEGER,
-        createdAt INTEGER
-      )
-    `);
+    console.log('正在初始化用户表...');
+    try {
+      await sqliteManager.init();
+      
+      console.log('创建users表...');
+      await sqliteManager.run(`
+        CREATE TABLE IF NOT EXISTS users (
+          uid TEXT PRIMARY KEY,
+          email TEXT UNIQUE,
+          displayName TEXT,
+          password TEXT,
+          isAnonymous INTEGER,
+          createdAt INTEGER
+        )
+      `);
+      console.log('用户表创建成功');
+      return true;
+    } catch (error) {
+      console.error('创建用户表失败:', error);
+      return false;
+    }
   }
 
   // 创建admin测试账户
   async _createAdminUser() {
     try {
+      console.log('检查admin账户...');
       // 检查admin账户是否已存在
       const existingAdmin = await sqliteManager.exec(
         'SELECT * FROM users WHERE email = ?', 
@@ -95,7 +105,7 @@ class UserManager {
       
       // 如果已存在，不需要再创建
       if (existingAdmin.length > 0) {
-        console.log('Admin测试账户已存在');
+        console.log('Admin测试账户已存在', existingAdmin[0]);
         return;
       }
       
@@ -112,7 +122,7 @@ class UserManager {
       );
       
       if (result.success) {
-        console.log('Admin测试账户创建成功');
+        console.log('Admin测试账户创建成功:', result);
       } else {
         console.error('创建Admin测试账户失败:', result.message);
       }
