@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKU生成器</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  </head>
+  <body>
+    <div class="container my-4">
+        <!-- 顶部导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">
+                    <i class="bi bi-house-door text-primary me-2"></i>亚马逊卖家工具集
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="fba.html"><i class="bi bi-calculator me-1"></i> FBA费用计算器</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#"><i class="bi bi-upc-scan me-1"></i> SKU生成器</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html"><i class="bi bi-arrow-return-left me-1"></i> 返回主页</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <h1 class="text-center mb-4 text-primary">SKU生成器</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">SKU选项</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label for="festival" class="form-label">节日:</label>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="festival" class="form-select">
+                            <option value="">请选择节日</option>
+                            <option value="圣诞节">圣诞节</option>
+                            <option value="万圣节">万圣节</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <button id="addFestival" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-plus"></i> 添加节日
+                        </button>
+                        <button id="deleteFestival" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-dash"></i> 删除节日
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label">类别:</label>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-header py-1">动物</div>
+                                    <div class="card-body py-2">
+                                        <select id="animal" class="form-select form-select-sm">
+                                            <option value="">请选择</option>
+                                        </select>
+                                        <div class="d-flex justify-content-end mt-1">
+                                            <button class="btn btn-sm btn-outline-secondary me-1 btn-xs" data-category="animal">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger btn-xs" data-category="animal">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-header py-1">职业</div>
+                                    <div class="card-body py-2">
+                                        <select id="profession" class="form-select form-select-sm">
+                                            <option value="">请选择</option>
+                                        </select>
+                                        <div class="d-flex justify-content-end mt-1">
+                                            <button class="btn btn-sm btn-outline-secondary me-1 btn-xs" data-category="profession">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger btn-xs" data-category="profession">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-header py-1">幽默</div>
+                                    <div class="card-body py-2">
+                                        <select id="humor" class="form-select form-select-sm">
+                                            <option value="">请选择</option>
+                                        </select>
+                                        <div class="d-flex justify-content-end mt-1">
+                                            <button class="btn btn-sm btn-outline-secondary me-1 btn-xs" data-category="humor">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger btn-xs" data-category="humor">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card">
+                                    <div class="card-header py-1">角色</div>
+                                    <div class="card-body py-2">
+                                        <select id="role" class="form-select form-select-sm">
+                                            <option value="">请选择</option>
+                                        </select>
+                                        <div class="d-flex justify-content-end mt-1">
+                                            <button class="btn btn-sm btn-outline-secondary me-1 btn-xs" data-category="role">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger btn-xs" data-category="role">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label for="style" class="form-label">款式:</label>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="style" class="form-select">
+                            <option value="">请选择款式</option>
+                            <option value="成衣">成衣</option>
+                            <option value="配件">配件</option>
+                            <option value="充气">充气</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <button id="addStyle" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-plus"></i> 添加款式
+                        </button>
+                        <button id="deleteStyle" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-dash"></i> 删除款式
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label">人群:</label>
+                    </div>
+                    <div class="col-md-10">
+                        <div id="crowdOptions" class="d-flex flex-wrap">
+                            <!-- 人群选项将通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label">尺码:</label>
+                    </div>
+                    <div class="col-md-10">
+                        <div id="sizeOptions" class="d-flex flex-wrap">
+                            <!-- 尺码选项将通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label">颜色:</label>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="d-flex align-items-center">
+                            <div id="colorOptions" class="d-flex flex-wrap">
+                                <!-- 颜色选项将通过JS动态生成 -->
+                            </div>
+                            <div class="ms-2">
+                                <button id="addColor" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                                <button id="deleteColor" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mb-4">
+            <button id="generateSKU" class="btn btn-primary btn-lg px-5">生成SKU</button>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">父SKU结果</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 id="parentSKU" class="mb-3 fw-bold">-</h2>
+                <div>
+                    <button id="copySPU" class="btn btn-outline-primary me-2">复制SPU</button>
+                    <button id="copyAllSKUs" class="btn btn-outline-primary me-2">复制所有SKU</button>
+                    <button id="undoDelete" class="btn btn-outline-secondary">撤销删除</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">所有SKU组合结果</h5>
+                <span id="skuCount" class="badge bg-light text-dark">0个</span>
+            </div>
+            <div class="card-body">
+                <div class="sku-results-container">
+                    <div id="skuResults" class="font-monospace">
+                        <!-- SKU结果将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部添加导航链接 -->
+        <div class="text-center mt-4">
+            <p class="text-muted small">SKU生成器 v1.0 | <a href="index.html">返回主页</a> | <a href="fba.html">前往FBA费用计算器</a></p>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加选项</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="optionName" class="form-label">中文名称:</label>
+                        <input type="text" class="form-control" id="optionName">
+                    </div>
+                    <div class="mb-3">
+                        <label for="optionCode" class="form-label">英文代码:</label>
+                        <input type="text" class="form-control" id="optionCode">
+                    </div>
+                    <div id="additionalFields">
+                        <!-- 可能的额外字段 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveOption">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">删除选项</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="deleteOption" class="form-label">选择要删除的项:</label>
+                        <select class="form-select" id="deleteOption"></select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

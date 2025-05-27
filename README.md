@@ -44,12 +44,12 @@
 
 ### 主界面
 
-1. 打开`main.html`文件启动工具集主界面
+1. 打开`index.html`文件启动工具集主界面
 2. 点击相应工具卡片上的"开始使用"按钮进入对应功能
 
 ### SKU生成器使用方法
 
-1. 从主界面点击"SKU生成器"或直接打开`index.html`文件
+1. 从主界面点击"SKU生成器"或直接打开`sku.html`文件
 2. 选择节日、类别、款式
 3. 勾选需要的人群、尺码和颜色
 4. 点击"生成SKU"按钮
@@ -127,8 +127,8 @@ SKU编码规则：节日代码 + 类别代码 + 款式代码 + 人群代码 + �
 
 ```
 amazon-seller-toolkit/
-├── main.html            # 主界面
-├── index.html           # SKU生成器界面
+├── index.html           # 主界面/首页
+├── sku.html             # SKU生成器界面
 ├── fba.html             # FBA费用计算器界面
 ├── styles.css           # SKU生成器样式
 ├── fba-styles.css       # FBA计算器样式
