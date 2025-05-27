@@ -9,7 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerError = document.getElementById('registerError');
     const registerSuccess = document.getElementById('registerSuccess');
     const anonymousLoginBtn = document.getElementById('anonymousLoginBtn');
-    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    // 正确初始化模态框
+    let loadingModal;
+    try {
+        loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    } catch (error) {
+        console.error('Modal初始化失败:', error);
+    }
+    
     const loadingMessage = document.getElementById('loadingMessage');
     
     // 显示/隐藏密码
@@ -34,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 处理登录表单提交
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        console.log('登录表单提交');
         
         // 获取表单数据
         const email = document.getElementById('loginEmail').value;
@@ -72,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 处理注册表单提交
     registerForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        console.log('注册表单提交');
         
         // 获取表单数据
         const email = document.getElementById('registerEmail').value;
@@ -176,13 +186,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 辅助函数：显示加载中
     function showLoading(message) {
-        loadingMessage.textContent = message || '处理中，请稍候...';
-        loadingModal.show();
+        if (loadingMessage) {
+            loadingMessage.textContent = message || '处理中，请稍候...';
+        }
+        if (loadingModal) {
+            try {
+                loadingModal.show();
+            } catch (error) {
+                console.error('无法显示加载模态框:', error);
+                alert(message || '处理中，请稍候...');
+            }
+        } else {
+            alert(message || '处理中，请稍候...');
+        }
     }
     
     // 辅助函数：隐藏加载中
     function hideLoading() {
-        loadingModal.hide();
+        if (loadingModal) {
+            try {
+                loadingModal.hide();
+            } catch (error) {
+                console.error('无法隐藏加载模态框:', error);
+            }
+        }
     }
     
     // 辅助函数：登录后重定向
@@ -198,5 +225,28 @@ document.addEventListener('DOMContentLoaded', function() {
             // 默认重定向到首页
             window.location.href = 'index.html';
         }
+    }
+    
+    console.log('登录页面脚本加载完成');
+    
+    // 添加注册按钮直接点击事件作为备用
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', function(e) {
+            console.log('注册按钮点击');
+            if (!registerForm.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                registerForm.classList.add('was-validated');
+                return;
+            }
+            
+            // 如果表单有效，手动触发表单提交事件
+            const submitEvent = new Event('submit', {
+                bubbles: true,
+                cancelable: true
+            });
+            registerForm.dispatchEvent(submitEvent);
+        });
     }
 }); 

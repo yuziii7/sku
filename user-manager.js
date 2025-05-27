@@ -35,6 +35,11 @@ class UserManager {
         // 通知监听器用户已登录
         this._notifyAuthStateChanged();
       }
+      
+      // 确保用户表已创建
+      this._createUserTable().catch(err => {
+        console.error('初始化用户表失败:', err);
+      });
     } catch (error) {
       console.error('初始化用户管理器失败:', error);
     }
@@ -79,6 +84,7 @@ class UserManager {
   // 注册新用户
   async registerUser(email, password, displayName = '') {
     try {
+      console.log('开始注册用户:', email);
       await this._createUserTable();
       
       // 检查邮箱是否已注册
@@ -95,11 +101,19 @@ class UserManager {
       const uid = 'user_' + Math.random().toString(36).substr(2, 9);
       const timestamp = getCurrentTimestamp();
       
+      console.log('创建新用户记录:', uid);
+      
       // 将用户信息存入数据库
-      await sqliteManager.run(
+      const result = await sqliteManager.run(
         'INSERT INTO users (uid, email, displayName, password, isAnonymous, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
         [uid, email, displayName, password, 0, timestamp]
       );
+      
+      if (!result.success) {
+        throw new Error(result.message || '创建用户记录失败');
+      }
+      
+      console.log('用户记录创建成功');
       
       // 创建用户对象
       this.currentUser = new User({
