@@ -1,0 +1,698 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from datetime import datetime
+import calendar
+import ctypes
+
+# Hide command window
+try:
+    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+except:
+    pass
+
+
+class FeeCalculator(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("综合费用计算器")
+        self.geometry("1200x630")  # 适当的窗口大小
+        self.configure(bg="#f0f0f0")
+
+        # 设置 DPI 感知
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        except:
+            pass
+
+        # 初始化费用变量
+        self.package_fee = 0.0
+        self.commission_fee = 0.0
+        self.storage_fee = 0.0
+
+        self.setup_styles()
+        self.setup_ui()
+
+    def setup_styles(self):
+        """设置界面样式"""
+        self.style = ttk.Style()
+        self.style.theme_use('default')
+
+        # 基本样式
+        styles = {
+            'TFrame': {'background': '#f0f0f0'},
+            'TButton': {'font': ('Arial', 10), 'background': '#FFFFFF', 'foreground': 'black'},
+            'TLabel': {'font': ('Arial', 10), 'background': '#f0f0f0'},
+            'TLabelframe': {'background': '#f0f0f0'},
+            'TLabelframe.Label': {'font': ('Arial', 10, 'bold')},
+            'Clear.TLabelframe.Label': {'font': ('Segoe UI', 11, 'bold'), 'background': '#f0f0f0'},
+            'Clear.TLabelframe': {'borderwidth': 2},
+            'Total.TLabelframe.Label': {'font': ('Segoe UI', 12, 'bold'), 'background': '#f0f0f0'},
+            'Total.TLabelframe': {'borderwidth': 2, 'background': '#f0f0f0'}
+        }
+
+        for style_name, options in styles.items():
+            self.style.configure(style_name, **options)
+
+    def setup_ui(self):
+        """设置主界面"""
+        # 创建主容器框架
+        container = ttk.Frame(self)
+        container.pack(fill="both", expand=True)
+
+        # 创建画布和滚动条
+        self.canvas = tk.Canvas(container, bg="#f0f0f0")
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
+
+        # 配置画布
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+
+        # 放置画布和滚动条
+        self.canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # 创建主框架（放在画布内）
+        self.main_frame = ttk.Frame(self.canvas, style='TFrame')
+
+        # 创建窗口
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
+
+        # 绑定事件处理
+        self.main_frame.bind("<Configure>", self.on_frame_configure)
+        self.canvas.bind("<Configure>", self.on_canvas_configure)
+
+        # 绑定鼠标滚轮事件
+        self.bind_all("<MouseWheel>", self.on_mousewheel)
+
+        # 创建上部、中部和下部框架
+        top_frame = ttk.Frame(self.main_frame)
+        top_frame.pack(fill="x", pady=5, padx=10)
+
+        middle_frame = ttk.LabelFrame(self.main_frame, text="月度仓储费用", style='Clear.TLabelframe')
+        middle_frame.pack(fill="x", padx=15, pady=5)
+
+        bottom_frame = ttk.LabelFrame(self.main_frame, text="总费用计算", style='Total.TLabelframe')
+        bottom_frame.pack(fill="x", padx=15, pady=5)
+
+        # 创建三个计算器框架并排放置
+        left_frame = ttk.LabelFrame(top_frame, text="物流配送费计算", style='Clear.TLabelframe')
+        left_frame.pack(side=tk.LEFT, fill="both", expand=True, padx=5, pady=5)
+
+        middle_frame = ttk.LabelFrame(top_frame, text="月度仓储费用", style='Clear.TLabelframe')
+        middle_frame.pack(side=tk.LEFT, fill="both", expand=True, padx=5, pady=5)
+
+        right_frame = ttk.LabelFrame(top_frame, text="佣金(含固定手续费)计算", style='Clear.TLabelframe')
+        right_frame.pack(side=tk.LEFT, fill="both", expand=True, padx=5, pady=5)
+
+        # 设置各个计算器
+        self.setup_package_calculator(left_frame)
+        self.setup_storage_calculator(middle_frame)
+        self.setup_fee_calculator(right_frame)
+        self.setup_total_calculator(bottom_frame)
+
+    def on_frame_configure(self, event):
+        """当框架大小改变时，更新画布滚动区域"""
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def on_canvas_configure(self, event):
+        """当画布大小改变时，调整内部窗口大小"""
+        # 更新内部窗口宽度以匹配画布宽度
+        self.canvas.itemconfig(self.canvas_window, width=event.width)
+
+    def on_mousewheel(self, event):
+        """鼠标滚轮事件处理"""
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def create_entry_grid(self, parent, fields, start_row=0):
+        """通用方法：创建输入字段网格"""
+        for i, (label_text, field_name) in enumerate(fields):
+            row = start_row + i
+            ttk.Label(parent, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=5)
+            entry = ttk.Entry(parent, width=15)
+            entry.grid(row=row, column=1, padx=5, pady=5)
+            setattr(self, field_name, entry)
+        return row + 1  # 返回下一行的索引
+
+    def setup_package_calculator(self, parent_frame):
+        """设置包裹费用计算器"""
+        # 创建输入字段
+        fields = [
+            ("长度（厘米）", "entry_length"),
+            ("宽度（厘米）", "entry_width"),
+            ("高度（厘米）", "entry_height"),
+            ("实际重量（克）", "entry_weight")
+        ]
+
+        next_row = self.create_entry_grid(parent_frame, fields)
+
+        # 计算按钮
+        calculate_package_btn = ttk.Button(
+            parent_frame,
+            text="计算包裹费用",
+            command=self.calculate_and_display_package
+        )
+        calculate_package_btn.grid(row=next_row, column=0, columnspan=2, pady=5)
+
+        # 结果显示区域
+        self.text_result_package = tk.Text(
+            parent_frame,
+            height=12,
+            width=30,
+            font=("Arial", 9),
+            wrap=tk.WORD,
+            borderwidth=1,
+            relief="solid"
+        )
+        self.text_result_package.grid(row=next_row+1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+        # 设置行列权重以允许调整大小
+        parent_frame.grid_rowconfigure(next_row+1, weight=1)
+        parent_frame.grid_columnconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(1, weight=1)
+
+    def setup_fee_calculator(self, parent_frame):
+        """设置佣金费用计算器"""
+        # 创建输入字段
+        fields = [
+            ("商品售价（美元）", "entry_total_price")
+        ]
+
+        next_row = self.create_entry_grid(parent_frame, fields)
+
+        # 计算按钮
+        calculate_fee_btn = ttk.Button(
+            parent_frame,
+            text="计算佣金费用",
+            command=self.calculate_and_display_fee
+        )
+        calculate_fee_btn.grid(row=next_row, column=0, columnspan=2, pady=5)
+
+        # 结果显示区域
+        self.text_result_fee = tk.Text(
+            parent_frame,
+            height=6,
+            width=30,
+            font=("Arial", 9),
+            wrap=tk.WORD,
+            borderwidth=1,
+            relief="solid"
+        )
+        self.text_result_fee.grid(row=next_row+1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+        # 添加佣金计算说明
+        info_text = self.create_info_text(
+            parent_frame,
+            "佣金费用计算规则：\n"
+            "- 商品价格 <= $15.00: 收取5%佣金\n"
+            "- 商品价格 $15.01-$20.00: 收取10%佣金\n"
+            "- 商品价格 > $20.00: 收取17%佣金\n"
+            "- 最低佣金为$0.30\n"
+            "- 每件商品附加$0.99固定手续费",
+            height=6
+        )
+        info_text.grid(row=next_row+2, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+        # 设置行列权重以允许调整大小
+        parent_frame.grid_rowconfigure(next_row+1, weight=1)
+        parent_frame.grid_columnconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(1, weight=1)
+
+    def setup_storage_calculator(self, parent_frame):
+        """设置仓储费用计算器"""
+        # 创建输入框架
+        input_frame = ttk.Frame(parent_frame)
+        input_frame.pack(fill="both", padx=20, pady=10)
+
+        # 创建输入字段
+        fields = [
+            ("装箱长度 (cm)", "entry_length_storage", 0, 0),
+            ("装箱宽度 (cm)", "entry_width_storage", 1, 0),
+            ("装箱高度 (cm)", "entry_height_storage", 2, 0),
+            ("开始日期 (YYYYMMDD)", "entry_start_date", 0, 2),
+            ("结束日期 (YYYYMMDD)", "entry_end_date", 1, 2),
+            ("装箱商品数量", "entry_packaging_quantity", 2, 2)
+        ]
+
+        for label_text, field_name, row, col in fields:
+            ttk.Label(input_frame, text=label_text).grid(row=row, column=col, sticky="w", padx=10, pady=8)
+            entry = ttk.Entry(input_frame, width=15)
+            entry.grid(row=row, column=col + 1, padx=10, pady=8)
+            setattr(self, field_name, entry)
+
+        # 设置今天日期为默认值
+        today = datetime.now().strftime("%Y%m%d")
+        self.entry_start_date.insert(0, today)
+        self.entry_end_date.insert(0, today)
+
+        # 按钮框架
+        button_frame = ttk.Frame(parent_frame)
+        button_frame.pack(fill="x", padx=20, pady=5)
+
+        # 创建按钮
+        buttons = [
+            ("计算全部仓储费用", self.calculate_storage_cost, 0, 0),
+            ("计算基础仓储费用", self.calculate_base_storage_cost, 0, 1)
+        ]
+
+        for text, command, row, col in buttons:
+            btn = ttk.Button(button_frame, text=text, command=command, style='TButton')
+            btn.grid(row=row, column=col, padx=10, pady=10)
+
+        # 结果区域
+        result_frame = ttk.Frame(parent_frame)
+        result_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.text_result_storage = tk.Text(
+            result_frame,
+            height=10,  # 减小高度
+            width=60,
+            font=("Arial", 10),
+            wrap=tk.WORD,
+            borderwidth=1,
+            relief="solid"
+        )
+        self.text_result_storage.pack(fill="both", expand=True)
+
+        # 添加仓储费用信息
+        info_text = self.create_info_text(
+            parent_frame,
+            "仓储费用计算规则：\n"
+            "- 1-9月份每立方英尺$0.78  |  10-12月份每立方英尺$2.4",
+            height=2
+        )
+        info_text.pack(fill="x", padx=20, pady=5)
+
+    def setup_total_calculator(self, parent_frame):
+        """设置总费用计算器"""
+        # 创建总费用显示框架
+        total_frame = ttk.Frame(parent_frame)
+        total_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # 创建费用显示区域
+        self.text_result_total = tk.Text(
+            total_frame,
+            height=5,  # 减小高度
+            width=60,
+            font=("Arial", 11),
+            wrap=tk.WORD,
+            borderwidth=1,
+            relief="solid"
+        )
+        self.text_result_total.pack(side=tk.LEFT, fill="both", expand=True, padx=5, pady=5)
+
+        # 创建按钮区域
+        button_frame = ttk.Frame(total_frame)
+        button_frame.pack(side=tk.RIGHT, fill="y", padx=5, pady=5)
+
+        # 添加计算总费用按钮
+        calculate_total_btn = ttk.Button(
+            button_frame,
+            text="计算总费用",
+            command=self.calculate_total_fee,
+            width=15
+        )
+        calculate_total_btn.pack(pady=10)
+
+        # 添加清除费用按钮
+        clear_btn = ttk.Button(
+            button_frame,
+            text="清除所有费用",
+            command=self.clear_all_fees,
+            width=15
+        )
+        clear_btn.pack(pady=10)
+
+        # 初始化显示
+        self.update_total_display()
+
+    def create_info_text(self, parent, content, height=2):
+        """创建信息文本框"""
+        info_text = tk.Text(
+            parent,
+            height=height,
+            font=("Arial", 9),
+            bg="#f0f0f0",
+            bd=0
+        )
+        info_text.insert(tk.END, content)
+        info_text.config(state="disabled")
+        return info_text
+
+    def update_total_display(self):
+        """更新总费用显示"""
+        total_fee = self.package_fee + self.commission_fee + self.storage_fee
+
+        result_text = (
+            f"物流配送费用：${self.package_fee:.2f}\n"
+            f"佣金及手续费：${self.commission_fee:.2f}\n"
+            f"仓储费用：${self.storage_fee:.2f}\n"
+            f"------------------------\n"
+            f"总费用：${total_fee:.2f}"
+        )
+
+        self.text_result_total.delete(1.0, tk.END)
+        self.text_result_total.insert(tk.END, result_text)
+
+    def calculate_total_fee(self):
+        """计算总费用"""
+        self.update_total_display()
+
+    def clear_all_fees(self):
+        """清除所有费用"""
+        self.package_fee = 0.0
+        self.commission_fee = 0.0
+        self.storage_fee = 0.0
+        self.update_total_display()
+
+    # ========== 包裹费用计算器函数 ==========
+    def calculate_chargeable_weight(self, length_cm, width_cm, height_cm, actual_weight_kg):
+        length_in = length_cm * 0.3937
+        width_in = width_cm * 0.3937
+        height_in = height_cm * 0.3937
+        actual_weight_oz = actual_weight_kg * 35.273
+        volume_weight_oz = (length_in * width_in * height_in) / 139 * 16
+        chargeable_weight = max(volume_weight_oz, actual_weight_oz)
+        return length_in, width_in, height_in, actual_weight_oz, volume_weight_oz, chargeable_weight
+
+    def is_small_package(self, length_in, width_in, height_in, actual_weight_oz):
+        max_side = max(width_in, height_in)
+        min_side = min(width_in, height_in)
+        return (
+                actual_weight_oz <= 16 and
+                length_in <= 15 and
+                max_side <= 12 and
+                min_side <= 0.75
+        )
+
+    def calculate_price(self, chargeable_weight, is_small):
+        if is_small:
+            if chargeable_weight <= 4:
+                return 3.27
+            elif chargeable_weight <= 8:
+                return 3.42
+            elif chargeable_weight <= 12:
+                return 3.72
+            elif chargeable_weight <= 16:
+                return 3.98
+        else:
+            if chargeable_weight <= 4:
+                return 4.25
+            elif chargeable_weight <= 8:
+                return 4.45
+            elif chargeable_weight <= 12:
+                return 4.67
+            elif chargeable_weight <= 16:
+                return 5.12
+            elif chargeable_weight <= 24:
+                return 5.90
+            elif chargeable_weight <= 32:
+                return 6.14
+            elif chargeable_weight <= 40:
+                return 6.60
+            elif chargeable_weight <= 48:
+                return 6.81
+            else:
+                additional_weight = (chargeable_weight - 48) / 0.5
+                return 6.92 + additional_weight * 0.16
+
+    def calculate_and_display_package(self):
+        try:
+            # Get user input
+            length_cm = float(self.entry_length.get())
+            width_cm = float(self.entry_width.get())
+            height_cm = float(self.entry_height.get())
+            actual_weight_g = float(self.entry_weight.get())
+            
+            # 将克转换为千克
+            actual_weight_kg = actual_weight_g / 1000
+
+            # Calculate
+            length_in, width_in, height_in, actual_oz, volume_oz, chargeable = self.calculate_chargeable_weight(
+                length_cm, width_cm, height_cm, actual_weight_kg
+            )
+
+            # Determine size type
+            size_type = "小号物件" if self.is_small_package(length_in, width_in, height_in, actual_oz) else "大号物件"
+
+            # Calculate price based on chargeable weight
+            price = self.calculate_price(chargeable, size_type == "小号物件")
+
+            # 保存费用到总计算器
+            self.package_fee = price
+            self.update_total_display()
+
+            # Display results
+            result_text = (
+                f"\n尺寸（英寸）：{length_in:.2f} × {width_in:.2f} × {height_in:.2f}  \n"
+                f"尺寸（厘米）：{length_cm:.2f} × {width_cm:.2f} × {height_cm:.2f}\n\n"
+                f"实际重量：{actual_weight_g:.2f} g ({actual_oz:.2f} oz)\n"
+                f"体积重量：{volume_oz:.2f} oz\n"
+                f"计费重量：{chargeable:.2f} oz\n\n"
+                f"尺寸类型：{size_type}\n"
+                f"计费价格：${price:.2f}"
+            )
+            self.text_result_package.delete(1.0, tk.END)
+            self.text_result_package.insert(tk.END, result_text)
+
+        except ValueError:
+            messagebox.showerror("输入错误", "请输入有效的数字。")
+
+    # ========== 佣金费用计算器函数 ==========
+    def calculate_fee(self, total_price):
+        if total_price <= 15.00:
+            fee = total_price * 0.05
+        elif total_price <= 20.00:
+            fee = total_price * 0.10
+        else:
+            fee = total_price * 0.17
+
+        # Ensure minimum fee of $0.3
+        return max(fee, 0.3)
+
+    def calculate_and_display_fee(self):
+        try:
+            # 获取商品价格
+            total_price = float(self.entry_total_price.get())
+            
+            # 计算费用
+            base_fee = self.calculate_fee(total_price)
+            fixed_fee = 0.99  # 固定手续费
+            total_fee = base_fee + fixed_fee
+
+            # 保存费用到总计算器
+            self.commission_fee = total_fee
+            self.update_total_display()
+
+            # 显示费用明细
+            result_text = (
+                f"商品总价：${total_price:.2f}\n\n"
+                f"基础佣金：${base_fee:.2f}\n"
+                f"固定手续费：${fixed_fee:.2f}\n"
+                f"应收总费用：${total_fee:.2f}"
+            )
+            self.text_result_fee.delete(1.0, tk.END)
+            self.text_result_fee.insert(tk.END, result_text)
+
+        except ValueError:
+            messagebox.showerror("输入错误", "请输入有效的数字。")
+
+    # ========== 仓储费用计算器函数 ==========
+    def calculate_storage_cost(self):
+        try:
+            # 获取输入值
+            length_cm = float(self.entry_length_storage.get())
+            width_cm = float(self.entry_width_storage.get())
+            height_cm = float(self.entry_height_storage.get())
+            start_date_str = self.entry_start_date.get()
+            end_date_str = self.entry_end_date.get()
+            packaging_quantity = float(self.entry_packaging_quantity.get())
+
+            # 转换厘米到英寸
+            length_in = length_cm * 0.393701
+            width_in = width_cm * 0.393701
+            height_in = height_cm * 0.393701
+
+            # 计算每个物品的体积（立方英寸）
+            volume_per_item = length_in * width_in * height_in
+
+            # 计算总存储体积（立方英寸）
+            total_volume = volume_per_item
+            cubic_feet = total_volume / 1728
+
+            # 转换日期字符串为datetime对象
+            start_date = datetime.strptime(start_date_str, "%Y%m%d")
+            end_date = datetime.strptime(end_date_str, "%Y%m%d")
+
+            # 计算天数差异
+            total_days = (end_date - start_date).days + 1  # 包括开始和结束日期
+
+            # 计算基于存储时间（周）的额外费用
+            duration_weeks = total_days / 7
+
+            additional_cost_per_cubic_inch = 0
+            if 22 <= duration_weeks < 28:
+                additional_cost_per_cubic_inch = 0.44
+            elif 28 <= duration_weeks < 36:
+                additional_cost_per_cubic_inch = 0.76
+            elif 36 <= duration_weeks < 44:
+                additional_cost_per_cubic_inch = 1.16
+            elif 44 <= duration_weeks < 52:
+                additional_cost_per_cubic_inch = 1.58
+            elif duration_weeks >= 52:
+                additional_cost_per_cubic_inch = 1.88
+
+            # 计算额外费用
+            additional_total_cost = total_volume * additional_cost_per_cubic_inch / 1728  # 转换为立方英尺的费用
+
+            # 计算基础存储成本
+            base_storage_cost = 0
+            current_date = start_date
+
+            while current_date <= end_date:
+                # 获取当前月份的天数
+                days_in_month = calendar.monthrange(current_date.year, current_date.month)[1]
+                
+                # 计算当前月份中的存储天数
+                if current_date.month == end_date.month and current_date.year == end_date.year:
+                    days_in_current_month = end_date.day - current_date.day + 1
+                else:
+                    days_in_current_month = days_in_month - current_date.day + 1
+                
+                # 确保不超过当月剩余天数
+                days_in_current_month = min(days_in_current_month, days_in_month)
+                
+                # 根据月份确定费率
+                if 1 <= current_date.month <= 9:  # 1-9月
+                    rate = 0.78
+                else:  # 10-12月
+                    rate = 2.4
+                
+                # 计算当月存储费用
+                monthly_cost = cubic_feet * rate * (days_in_current_month / days_in_month)
+                base_storage_cost += monthly_cost
+                
+                # 移动到下个月的第一天
+                if current_date.month == 12:
+                    next_month = 1
+                    next_year = current_date.year + 1
+                else:
+                    next_month = current_date.month + 1
+                    next_year = current_date.year
+                
+                current_date = datetime(next_year, next_month, 1)
+
+            # 计算总费用
+            total_storage_cost = base_storage_cost + additional_total_cost
+            
+            # 计算每件商品的费用（总费用除以装箱商品数量）
+            per_item_cost = total_storage_cost / packaging_quantity if packaging_quantity > 0 else 0
+
+            # 保存费用到总计算器
+            self.storage_fee = total_storage_cost
+            self.update_total_display()
+
+            # 显示结果
+            result_text = (
+                f"箱体尺寸：{length_cm:.2f} × {width_cm:.2f} × {height_cm:.2f} 厘米\n"
+                f"装箱商品数量：{packaging_quantity}\n"
+                f"存储时间：{start_date.strftime('%Y-%m-%d')} 至 {end_date.strftime('%Y-%m-%d')} ({total_days}天)\n\n"
+                f"体积：{volume_per_item:.2f} 立方英寸 ({cubic_feet:.4f} 立方英尺)\n"
+                f"基础仓储费用：${base_storage_cost:.2f}\n"
+                f"长期存储附加费：${additional_total_cost:.2f}\n"
+                f"总仓储费用：${total_storage_cost:.2f}\n"
+                f"每件商品仓储费用：${per_item_cost:.4f}"
+            )
+            self.text_result_storage.delete(1.0, tk.END)
+            self.text_result_storage.insert(tk.END, result_text)
+
+        except ValueError:
+            messagebox.showerror("输入错误", "请输入有效的数字和日期格式。")
+
+    def calculate_base_storage_cost(self):
+        try:
+            # 获取输入值
+            length_cm = float(self.entry_length_storage.get())
+            width_cm = float(self.entry_width_storage.get())
+            height_cm = float(self.entry_height_storage.get())
+            start_date_str = self.entry_start_date.get()
+            end_date_str = self.entry_end_date.get()
+            packaging_quantity = float(self.entry_packaging_quantity.get())
+
+            # 转换厘米到英寸
+            length_in = length_cm * 0.393701
+            width_in = width_cm * 0.393701
+            height_in = height_cm * 0.393701
+
+            # 计算箱体的体积（立方英寸）
+            volume = length_in * width_in * height_in
+            cubic_feet = volume / 1728  # 转换为立方英尺
+
+            # 转换日期字符串为datetime对象
+            start_date = datetime.strptime(start_date_str, "%Y%m%d")
+            end_date = datetime.strptime(end_date_str, "%Y%m%d")
+
+            # 计算天数差异
+            total_days = (end_date - start_date).days + 1  # 包括开始和结束日期
+
+            # 计算总存储成本（考虑不完全月份）
+            total_storage_cost = 0
+            current_date = start_date
+
+            while current_date <= end_date:
+                # 获取当前月份的天数
+                days_in_month = calendar.monthrange(current_date.year, current_date.month)[1]
+                
+                # 计算当前月份中的存储天数
+                if current_date.month == end_date.month and current_date.year == end_date.year:
+                    days_in_current_month = end_date.day - current_date.day + 1
+                else:
+                    days_in_current_month = days_in_month - current_date.day + 1
+                
+                # 确保不超过当月剩余天数
+                days_in_current_month = min(days_in_current_month, days_in_month)
+                
+                # 根据月份确定费率
+                if 1 <= current_date.month <= 9:  # 1-9月
+                    rate = 0.78
+                else:  # 10-12月
+                    rate = 2.4
+                
+                # 计算当月存储费用
+                monthly_cost = cubic_feet * rate * (days_in_current_month / days_in_month)
+                total_storage_cost += monthly_cost
+                
+                # 移动到下个月的第一天
+                if current_date.month == 12:
+                    next_month = 1
+                    next_year = current_date.year + 1
+                else:
+                    next_month = current_date.month + 1
+                    next_year = current_date.year
+                
+                current_date = datetime(next_year, next_month, 1)
+                
+            # 计算每件商品的费用（总费用除以装箱商品数量）
+            per_item_cost = total_storage_cost / packaging_quantity if packaging_quantity > 0 else 0
+
+            # 保存费用到总计算器
+            self.storage_fee = total_storage_cost
+            self.update_total_display()
+
+            # 显示结果
+            result_text = (
+                f"箱体尺寸：{length_cm:.2f} × {width_cm:.2f} × {height_cm:.2f} 厘米\n"
+                f"装箱商品数量：{packaging_quantity}\n"
+                f"存储时间：{start_date.strftime('%Y-%m-%d')} 至 {end_date.strftime('%Y-%m-%d')} ({total_days}天)\n\n"
+                f"体积：{volume:.2f} 立方英寸 ({cubic_feet:.4f} 立方英尺)\n"
+                f"基础仓储费用：${total_storage_cost:.2f}\n"
+                f"每件商品仓储费用：${per_item_cost:.4f}"
+            )
+            self.text_result_storage.delete(1.0, tk.END)
+            self.text_result_storage.insert(tk.END, result_text)
+
+        except ValueError:
+            messagebox.showerror("输入错误", "请输入有效的数字和日期格式。")
+
+
+if __name__ == "__main__":
+    app = FeeCalculator()
+    app.mainloop()
