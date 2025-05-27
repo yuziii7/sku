@@ -1,3 +1,6 @@
+import { skuDatabase } from './database-factory.js';
+import { auth, onAuthStateChanged } from './user-manager.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化数据
     const data = {
@@ -477,6 +480,114 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 保存生成的SKU以便复制
         window.generatedSKUs = allSKUs;
+        
+        // 如果用户已登录，显示保存按钮
+        if (auth.currentUser) {
+            // 添加保存按钮（如果不存在）
+            let saveButton = document.getElementById('saveSKUs');
+            if (!saveButton) {
+                saveButton = document.createElement('button');
+                saveButton.id = 'saveSKUs';
+                saveButton.className = 'btn btn-primary mt-3 w-100';
+                saveButton.innerHTML = '<i class="bi bi-cloud-upload"></i> 保存SKU到数据库';
+                
+                // 添加到结果区域
+                const resultContainer = document.querySelector('.card.bg-light .card-body');
+                resultContainer.appendChild(saveButton);
+                
+                // 添加提示消息元素
+                const saveMessage = document.createElement('div');
+                saveMessage.id = 'saveMessage';
+                saveMessage.className = 'alert mt-2';
+                saveMessage.style.display = 'none';
+                resultContainer.appendChild(saveMessage);
+                
+                // 绑定保存事件
+                saveButton.addEventListener('click', saveSKUsToDatabase);
+            }
+            
+            saveButton.style.display = 'block';
+        }
+    }
+    
+    // 保存SKU到数据库
+    async function saveSKUsToDatabase() {
+        try {
+            // 获取父SKU
+            const parentSKU = document.querySelector('#parentSKU').textContent;
+            
+            // 验证是否有SKU可保存
+            if (!window.generatedSKUs || window.generatedSKUs.length === 0) {
+                showSaveMessage('error', '没有可保存的SKU');
+                return;
+            }
+            
+            // 获取选择的品牌、类别和款式信息
+            const festival = document.querySelector('#festival').value;
+            const animal = document.querySelector('#animal').value;
+            const profession = document.querySelector('#profession').value;
+            const humor = document.querySelector('#humor').value;
+            const role = document.querySelector('#role').value;
+            const style = document.querySelector('#style').value;
+            
+            // 确定选中的类别
+            let category = '';
+            let categoryValue = '';
+            if (animal) {
+                category = 'animal';
+                categoryValue = animal;
+            } else if (profession) {
+                category = 'profession';
+                categoryValue = profession;
+            } else if (humor) {
+                category = 'humor';
+                categoryValue = humor;
+            } else if (role) {
+                category = 'role';
+                categoryValue = role;
+            }
+            
+            // 保存主SKU信息
+            const mainSkuData = {
+                sku: parentSKU,
+                brand: festival || '',
+                category: category || '',
+                productName: categoryValue || '',
+                additional: style || ''
+            };
+            
+            // 保存到数据库
+            const result = await skuDatabase.saveSku(mainSkuData);
+            
+            if (result.success) {
+                showSaveMessage('success', 'SKU已成功保存到数据库');
+            } else {
+                showSaveMessage('error', `保存失败: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('保存SKU失败:', error);
+            showSaveMessage('error', `保存出错: ${error.message}`);
+        }
+    }
+    
+    // 显示保存消息
+    function showSaveMessage(type, message) {
+        const saveMessage = document.getElementById('saveMessage');
+        if (!saveMessage) return;
+        
+        saveMessage.textContent = message;
+        saveMessage.style.display = 'block';
+        
+        if (type === 'error') {
+            saveMessage.className = 'alert alert-danger mt-2';
+        } else {
+            saveMessage.className = 'alert alert-success mt-2';
+        }
+        
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            saveMessage.style.display = 'none';
+        }, 3000);
     }
     
     // 删除单个SKU
@@ -799,4 +910,141 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 启动应用
     init();
+    
+    // 用户认证和历史记录相关功能
+    // 获取DOM元素
+    const loginNavItem = document.getElementById('loginNavItem');
+    const userNavItem = document.getElementById('userNavItem');
+    const userNameElement = document.getElementById('userName');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const showHistoryBtn = document.getElementById('showHistory');
+    const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+    const historyContent = document.getElementById('historyContent');
+    const historyLoading = document.getElementById('historyLoading');
+    
+    // 监听用户登录状态
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 用户已登录
+            loginNavItem.classList.add('d-none');
+            userNavItem.classList.remove('d-none');
+            userNameElement.textContent = user.email ? user.email.split('@')[0] : '用户';
+        } else {
+            // 用户未登录
+            loginNavItem.classList.remove('d-none');
+            userNavItem.classList.add('d-none');
+        }
+    });
+    
+    // 退出登录
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            signOut(auth).then(() => {
+                // 成功退出登录
+                alert('您已成功退出登录');
+                loginNavItem.classList.remove('d-none');
+                userNavItem.classList.add('d-none');
+            }).catch((error) => {
+                console.error('退出登录失败:', error);
+                alert('退出登录失败，请重试');
+            });
+        });
+    }
+    
+    // 显示历史记录
+    if (showHistoryBtn) {
+        showHistoryBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 打开模态窗口
+            historyModal.show();
+            
+            // 加载历史记录
+            loadSkuHistory();
+        });
+    }
+    
+    // 加载SKU历史记录
+    async function loadSkuHistory() {
+        // 显示加载中
+        historyLoading.style.display = 'block';
+        historyContent.innerHTML = '';
+        
+        try {
+            const result = await skuDatabase.getSkuHistory();
+            
+            // 隐藏加载中
+            historyLoading.style.display = 'none';
+            
+            if (result.success) {
+                if (result.history.length === 0) {
+                    historyContent.innerHTML = '<div class="text-center py-4">暂无SKU历史记录</div>';
+                    return;
+                }
+                
+                // 构建历史记录HTML
+                let historyHTML = '<div class="list-group">';
+                
+                result.history.forEach(item => {
+                    const date = new Date(item.createdAt);
+                    const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    
+                    historyHTML += `
+                        <div class="list-group-item list-group-item-action" data-id="${item.id}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">${item.sku}</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger delete-sku-btn" data-id="${item.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="mb-1">${item.brand || ''} ${item.category || ''} ${item.productName || ''} ${item.color || ''} ${item.size || ''}</p>
+                            <small class="text-muted">${dateStr}</small>
+                        </div>
+                    `;
+                });
+                
+                historyHTML += '</div>';
+                historyContent.innerHTML = historyHTML;
+                
+                // 绑定删除按钮事件
+                document.querySelectorAll('.delete-sku-btn').forEach(btn => {
+                    btn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const skuId = this.getAttribute('data-id');
+                        
+                        if (confirm('确定要删除这个SKU记录吗？')) {
+                            try {
+                                const result = await skuDatabase.deleteSku(skuId);
+                                
+                                if (result.success) {
+                                    // 删除成功，移除对应的列表项
+                                    this.closest('.list-group-item').remove();
+                                    
+                                    // 如果没有剩余项，显示空提示
+                                    if (document.querySelectorAll('.list-group-item').length === 0) {
+                                        historyContent.innerHTML = '<div class="text-center py-4">暂无SKU历史记录</div>';
+                                    }
+                                } else {
+                                    alert(`删除失败: ${result.message}`);
+                                }
+                            } catch (error) {
+                                console.error('删除SKU记录失败:', error);
+                                alert('删除失败，请重试');
+                            }
+                        }
+                    });
+                });
+            } else {
+                historyContent.innerHTML = `<div class="text-center py-4 text-danger">加载失败：${result.message}</div>`;
+            }
+        } catch (error) {
+            historyLoading.style.display = 'none';
+            historyContent.innerHTML = '<div class="text-center py-4 text-danger">加载出错，请重试</div>';
+            console.error('加载SKU历史记录出错:', error);
+        }
+    }
 }); 

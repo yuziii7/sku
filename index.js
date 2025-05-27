@@ -1,8 +1,6 @@
 // 主页JavaScript
-import { auth } from './firebase-config.js';
-import { signOut, onAuthStateChanged } from "firebase/auth";
-import { getSkuHistory } from './sku-database.js';
-import { getCalculationHistory } from './fba-database.js';
+import { auth, onAuthStateChanged } from './user-manager.js';
+import { skuDatabase, fbaDatabase } from './database-factory.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // 获取元素
@@ -28,8 +26,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // 用户已登录
             loginNavItem.style.display = 'none';
             userNavItem.style.display = 'block';
-            userNameElement.textContent = user.email.split('@')[0];
+            userNameElement.textContent = user.displayName || user.email?.split('@')[0] || '用户';
             userWelcome.style.display = 'block';
+            
+            // 如果是匿名用户，显示不同的欢迎消息
+            if (user.isAnonymous) {
+                userWelcome.textContent = '您正在匿名使用。登录账户可以保存和同步您的数据。';
+            }
         } else {
             // 用户未登录
             loginNavItem.style.display = 'block';
@@ -44,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logoutBtn.addEventListener('click', function(e) {
         e.preventDefault();
         
-        signOut(auth).then(() => {
+        auth.signOut().then(() => {
             // 退出成功，显示登录按钮
             loginNavItem.style.display = 'block';
             userNavItem.style.display = 'none';
@@ -56,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('您已成功退出登录');
         }).catch((error) => {
             console.error('退出登录失败:', error);
+            alert('退出登录失败，请重试');
         });
     });
     
@@ -109,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         historyContent.innerHTML = '';
         
         try {
-            const result = await getSkuHistory();
+            const result = await skuDatabase.getSkuHistory(5);
             
             // 隐藏加载中
             historyLoading.style.display = 'none';
@@ -121,37 +125,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // 构建历史记录HTML
-                let historyHTML = '';
+                let historyHTML = '<div class="list-group">';
                 
                 result.history.forEach(item => {
                     const date = new Date(item.createdAt);
                     const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                     
                     historyHTML += `
-                        <div class="history-item" data-id="${item.id}">
-                            <div class="d-flex justify-content-between">
-                                <strong>${item.sku}</strong>
+                        <div class="history-item" onclick="window.location.href='sku.html'">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${item.sku}</h6>
                                 <small class="text-muted">${dateStr}</small>
                             </div>
-                            <div class="small text-muted mt-1">
-                                ${item.brand} | ${item.category} | ${item.productName} | ${item.color || ''} ${item.size || ''}
-                            </div>
+                            <p class="mb-1 small">${item.brand || ''} ${item.category || ''} ${item.productName || ''}</p>
                         </div>
                     `;
                 });
                 
+                historyHTML += '</div>';
                 historyContent.innerHTML = historyHTML;
-                
-                // 添加点击事件，跳转到SKU生成器
-                document.querySelectorAll('.history-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        const skuId = this.getAttribute('data-id');
-                        // 保存要查看的SKU ID到本地存储
-                        localStorage.setItem('viewSkuId', skuId);
-                        // 跳转到SKU生成器
-                        window.location.href = 'sku.html';
-                    });
-                });
             } else {
                 historyContent.innerHTML = `<div class="text-center py-4 text-danger">加载失败：${result.message}</div>`;
             }
@@ -169,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         historyContent.innerHTML = '';
         
         try {
-            const result = await getCalculationHistory();
+            const result = await fbaDatabase.getCalculationHistory(null, 5);
             
             // 隐藏加载中
             historyLoading.style.display = 'none';
@@ -181,69 +173,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // 构建历史记录HTML
-                let historyHTML = '';
+                let historyHTML = '<div class="list-group">';
                 
                 result.history.forEach(item => {
                     const date = new Date(item.createdAt);
                     const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                     
-                    let calculationTypeText = '';
-                    switch (item.calculationType) {
-                        case 'shipping':
-                            calculationTypeText = '物流配送费';
-                            break;
-                        case 'storage':
-                            calculationTypeText = '仓储费';
-                            break;
-                        case 'commission':
-                            calculationTypeText = '佣金费';
-                            break;
-                        case 'all':
-                            calculationTypeText = '总费用';
-                            break;
-                        default:
-                            calculationTypeText = '未知计算';
-                    }
-                    
-                    // 根据计算类型获取结果
-                    let resultText = '';
-                    if (item.resultData) {
-                        if (item.calculationType === 'all') {
-                            resultText = `总费用: $${parseFloat(item.resultData.totalFee).toFixed(2)}`;
-                        } else if (item.calculationType === 'shipping') {
-                            resultText = `物流费: $${parseFloat(item.resultData.shippingFee).toFixed(2)}`;
-                        } else if (item.calculationType === 'storage') {
-                            resultText = `仓储费: $${parseFloat(item.resultData.storageFee).toFixed(2)}`;
-                        } else if (item.calculationType === 'commission') {
-                            resultText = `佣金: $${parseFloat(item.resultData.commissionFee).toFixed(2)}`;
-                        }
-                    }
+                    const calculationTypeText = {
+                        'shipping': '物流配送费',
+                        'storage': '仓储费',
+                        'commission': '佣金',
+                        'all': '全部费用'
+                    }[item.calculationType] || item.calculationType;
                     
                     historyHTML += `
-                        <div class="history-item" data-id="${item.id}">
-                            <div class="d-flex justify-content-between">
-                                <strong>${calculationTypeText}</strong>
+                        <div class="history-item" onclick="window.location.href='fba.html'">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${calculationTypeText}</h6>
                                 <small class="text-muted">${dateStr}</small>
                             </div>
-                            <div class="small text-muted mt-1">
-                                ${resultText}
-                            </div>
+                            <p class="mb-1 small">总费用: $${item.resultData.totalFee?.toFixed(2) || '0.00'}</p>
                         </div>
                     `;
                 });
                 
+                historyHTML += '</div>';
                 historyContent.innerHTML = historyHTML;
-                
-                // 添加点击事件，跳转到FBA计算器
-                document.querySelectorAll('.history-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        const calcId = this.getAttribute('data-id');
-                        // 保存要查看的计算ID到本地存储
-                        localStorage.setItem('viewCalcId', calcId);
-                        // 跳转到FBA计算器
-                        window.location.href = 'fba.html';
-                    });
-                });
             } else {
                 historyContent.innerHTML = `<div class="text-center py-4 text-danger">加载失败：${result.message}</div>`;
             }
@@ -253,4 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('加载计算历史记录出错:', error);
         }
     }
+    
+    // 初始状态下设置历史按钮样式
+    toggleSkuHistoryBtn.classList.add('btn-primary');
+    toggleSkuHistoryBtn.classList.remove('btn-outline-secondary');
 }); 

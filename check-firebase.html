@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase配置检查</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .console-log {
+            background-color: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .firebase-logo {
+            color: #FFCA28;
+            font-size: 2.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="bi bi-fire firebase-logo"></i>
+            <h1>Firebase配置检查工具</h1>
+            <p class="text-muted">检查您的Firebase项目设置是否正确</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Firebase配置状态</h3>
+            </div>
+            <div class="card-body">
+                <div id="loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">正在检查Firebase配置...</p>
+                </div>
+                
+                <div id="results" class="d-none"></div>
+                
+                <div class="d-flex justify-content-between mt-3">
+                    <button id="runTest" class="btn btn-primary" disabled>重新检查</button>
+                    <a href="login.html" class="btn btn-outline-secondary">返回登录页面</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h3 class="mb-0"><i class="bi bi-terminal-fill me-2"></i>控制台日志</h3>
+            </div>
+            <div class="card-body">
+                <div class="console-log" id="consoleOutput"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i>帮助信息</h3>
+            </div>
+            <div class="card-body">
+                <h4>如何解决常见问题</h4>
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <strong>Firebase配置错误</strong>
+                        <p>检查firebase-config.js文件中的配置信息是否与Firebase控制台中的项目设置一致。</p>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>邮箱/密码认证未启用</strong>
+                        <p>在Firebase控制台中，进入"Authentication > Sign-in method"，确保已启用"Email/Password"提供商。</p>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>域名未授权</strong>
+                        <p>在Firebase控制台中，进入"Authentication > Settings > Authorized domains"，确保已添加您的网站域名。如果是本地开发，请添加"localhost"。</p>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>网络问题</strong>
+                        <p>确保您的网络连接正常，并且能够访问Firebase服务。某些国家/地区可能需要使用VPN。</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script type="module">
+        import { testFirebaseAuth, displayResults } from './check-firebase-setup.js';
+        
+        // 捕获控制台输出
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        console.log = function() {
+            originalConsoleLog.apply(console, arguments);
+            const args = Array.from(arguments);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                } else {
+                    return arg;
+                }
+            }).join(' ');
+            
+            const logElement = document.createElement('div');
+            logElement.textContent = `[LOG] ${message}`;
+            consoleOutput.appendChild(logElement);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        console.error = function() {
+            originalConsoleError.apply(console, arguments);
+            const args = Array.from(arguments);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                } else {
+                    return arg;
+                }
+            }).join(' ');
+            
+            const logElement = document.createElement('div');
+            logElement.style.color = '#f00';
+            logElement.textContent = `[ERROR] ${message}`;
+            consoleOutput.appendChild(logElement);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        // 运行测试
+        async function runTests() {
+            const loadingElement = document.getElementById('loading');
+            const resultsElement = document.getElementById('results');
+            const runTestButton = document.getElementById('runTest');
+            
+            // 显示加载状态
+            loadingElement.classList.remove('d-none');
+            resultsElement.classList.add('d-none');
+            runTestButton.disabled = true;
+            
+            console.log('开始检查Firebase配置...');
+            
+            try {
+                // 运行测试
+                const results = await testFirebaseAuth();
+                
+                // 显示结果
+                resultsElement.innerHTML = displayResults(results);
+                
+                // 隐藏加载状态，显示结果
+                loadingElement.classList.add('d-none');
+                resultsElement.classList.remove('d-none');
+                runTestButton.disabled = false;
+                
+                console.log('Firebase配置检查完成');
+            } catch (error) {
+                console.error('配置检查失败:', error);
+                
+                resultsElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4><i class="bi bi-exclamation-triangle-fill me-2"></i>检查失败</h4>
+                        <p>检查Firebase配置时发生错误: ${error.message}</p>
+                    </div>
+                `;
+                
+                loadingElement.classList.add('d-none');
+                resultsElement.classList.remove('d-none');
+                runTestButton.disabled = false;
+            }
+        }
+        
+        // 初始运行
+        runTests();
+        
+        // 重新运行按钮
+        document.getElementById('runTest').addEventListener('click', runTests);
+    </script>
+</body>
+</html> 

@@ -1,7 +1,6 @@
 // FBA计算器脚本
-import { saveCalculation } from './fba-database.js';
-import { auth } from './firebase-config.js';
-import { onAuthStateChanged } from 'firebase/auth';
+import { fbaDatabase } from './database-factory.js';
+import { auth, onAuthStateChanged } from './user-manager.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化数据
@@ -633,13 +632,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 totalFee: totalFee
             };
             
-            // 保存到Firebase
-            const result = await saveCalculation('all', inputData, resultData);
+            const now = new Date();
+            resultData.calculationTime = now.toLocaleString();
             
-            if (result.success) {
-                showSaveMessage('success', '计算结果已保存');
-            } else {
-                showSaveMessage('error', `保存失败: ${result.message}`);
+            // 如果用户已登录，保存计算结果
+            if (auth.currentUser) {
+                try {
+                    const result = await fbaDatabase.saveCalculation('all', inputData, resultData);
+                    
+                    if (result.success) {
+                        showSaveMessage('success', '计算结果已保存');
+                    }
+                } catch (error) {
+                    console.error('保存计算结果失败:', error);
+                }
             }
         } catch (error) {
             showSaveMessage('error', `保存出错: ${error.message}`);

@@ -8,14 +8,22 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "http-server -p 3000",
+    "serve": "node serve.js",
     "deploy": "node deploy.js",
     "firebase-init": "node firebase-init.js",
     "init-firebase": "firebase init",
-    "deploy-firebase": "firebase deploy"
+    "deploy-firebase": "firebase deploy",
+    "check-firebase": "echo '请在浏览器中打开 http://localhost:3000/check-firebase.html' && node serve.js",
+    "debug-auth": "echo '请在浏览器中打开 http://localhost:3000/debug-auth.html' && node serve.js",
+    "create-admin": "echo '请在浏览器中打开 http://localhost:3000/create-admin.html' && node serve.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "firebase": "^9.22.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "sql.js": "^1.8.0",
+    "@jlongster/sql.js-persist": "^1.0.9",
+    "serve": "^14.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",

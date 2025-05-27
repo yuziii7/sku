@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase认证调试</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7f7f7;
+            padding: 20px;
+        }
+        .console-log {
+            background-color: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Firebase Authentication 调试页面</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header">控制台日志</div>
+            <div class="card-body">
+                <div class="console-log" id="consoleOutput"></div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">手动测试</div>
+            <div class="card-body">
+                <h5>注册测试</h5>
+                <form id="manualRegisterForm" class="row g-3">
+                    <div class="col-md-5">
+                        <input type="email" class="form-control" id="testEmail" placeholder="测试邮箱" required>
+                    </div>
+                    <div class="col-md-5">
+                        <input type="password" class="form-control" id="testPassword" placeholder="测试密码" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">测试注册</button>
+                    </div>
+                </form>
+                <div id="manualTestResult" class="mt-3"></div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">Firebase认证状态</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h5>当前状态</h5>
+                            <div id="authStatus" class="alert alert-secondary">检查中...</div>
+                        </div>
+                        <button id="checkAuthStatus" class="btn btn-secondary">刷新状态</button>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>认证提供商</h5>
+                        <div id="authProviders" class="mt-2">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">密码重置测试</div>
+            <div class="card-body">
+                <form id="resetPasswordForm" class="row g-3">
+                    <div class="col-md-8">
+                        <input type="email" class="form-control" id="resetEmail" placeholder="电子邮箱" required>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-warning w-100">发送密码重置邮件</button>
+                    </div>
+                </form>
+                <div id="resetResult" class="mt-3"></div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+            <a href="login.html" class="btn btn-outline-secondary">返回登录页面</a>
+            <a href="index.html" class="btn btn-outline-primary">返回主页</a>
+        </div>
+    </div>
+    
+    <script type="module" src="debug-auth.js"></script>
+    
+    <script type="module">
+        import { auth } from './firebase-config.js';
+        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, fetchSignInMethodsForEmail } from "firebase/auth";
+        
+        // 捕获控制台输出
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        console.log = function() {
+            originalConsoleLog.apply(console, arguments);
+            const args = Array.from(arguments);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                } else {
+                    return arg;
+                }
+            }).join(' ');
+            
+            const logElement = document.createElement('div');
+            logElement.textContent = `[LOG] ${message}`;
+            consoleOutput.appendChild(logElement);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        console.error = function() {
+            originalConsoleError.apply(console, arguments);
+            const args = Array.from(arguments);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                } else {
+                    return arg;
+                }
+            }).join(' ');
+            
+            const logElement = document.createElement('div');
+            logElement.style.color = '#f00';
+            logElement.textContent = `[ERROR] ${message}`;
+            consoleOutput.appendChild(logElement);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        // 手动测试表单
+        document.getElementById('manualRegisterForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            const resultElement = document.getElementById('manualTestResult');
+            
+            resultElement.innerHTML = '<div class="alert alert-info">测试中...</div>';
+            
+            try {
+                console.log(`手动测试: 尝试创建用户 ${email}`);
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                console.log('用户创建成功:', userCredential.user);
+                resultElement.innerHTML = `<div class="alert alert-success">成功创建用户: ${email}</div>`;
+            } catch (error) {
+                console.error('创建用户失败:', error.code, error.message);
+                resultElement.innerHTML = `<div class="alert alert-danger">错误: ${error.code} - ${error.message}</div>`;
+            }
+        });
+        
+        // 初始测试
+        console.log('调试页面加载完成');
+        console.log('Firebase版本: 9.23.0');
+        console.log('检查Firebase项目配置...');
+        
+        try {
+            const config = {
+                apiKey: auth.app.options.apiKey,
+                authDomain: auth.app.options.authDomain,
+                projectId: auth.app.options.projectId
+            };
+            console.log('Firebase配置:', config);
+            
+            // 检查域名与authDomain是否匹配
+            const currentDomain = window.location.hostname;
+            console.log('当前域名:', currentDomain);
+            if (config.authDomain && !config.authDomain.includes(currentDomain) && currentDomain !== 'localhost') {
+                console.error('警告: 当前域名与authDomain不匹配，这可能导致认证问题');
+            }
+        } catch (error) {
+            console.error('获取Firebase配置失败:', error);
+        }
+        
+        // 检查认证状态
+        function updateAuthStatus() {
+            const statusElement = document.getElementById('authStatus');
+            
+            if (auth.currentUser) {
+                statusElement.className = 'alert alert-success';
+                statusElement.innerHTML = `
+                    <strong>已登录</strong><br>
+                    用户ID: ${auth.currentUser.uid}<br>
+                    邮箱: ${auth.currentUser.email}<br>
+                    邮箱验证: ${auth.currentUser.emailVerified ? '是' : '否'}
+                `;
+            } else {
+                statusElement.className = 'alert alert-warning';
+                statusElement.textContent = '未登录';
+            }
+        }
+        
+        // 初始化时检查状态
+        updateAuthStatus();
+        
+        // 刷新状态按钮
+        document.getElementById('checkAuthStatus').addEventListener('click', updateAuthStatus);
+        
+        // 监听认证状态变化
+        onAuthStateChanged(auth, (user) => {
+            console.log('认证状态变化:', user ? `已登录: ${user.email}` : '未登录');
+            updateAuthStatus();
+        });
+        
+        // 密码重置表单
+        document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('resetEmail').value;
+            const resultElement = document.getElementById('resetResult');
+            
+            resultElement.innerHTML = '<div class="alert alert-info">发送中...</div>';
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                console.log('密码重置邮件已发送');
+                resultElement.innerHTML = `<div class="alert alert-success">密码重置邮件已发送到 ${email}</div>`;
+                
+                // 检查该邮箱的登录方式
+                try {
+                    const methods = await fetchSignInMethodsForEmail(auth, email);
+                    console.log('该邮箱支持的登录方式:', methods);
+                    
+                    if (methods.length === 0) {
+                        resultElement.innerHTML += `<div class="alert alert-warning mt-2">警告: 该邮箱未注册任何账户</div>`;
+                    } else {
+                        resultElement.innerHTML += `<div class="alert alert-info mt-2">该邮箱支持的登录方式: ${methods.join(', ')}</div>`;
+                    }
+                } catch (error) {
+                    console.error('检查登录方式失败:', error);
+                }
+            } catch (error) {
+                console.error('发送密码重置邮件失败:', error);
+                resultElement.innerHTML = `<div class="alert alert-danger">错误: ${error.code} - ${error.message}</div>`;
+            }
+        });
+        
+        // 检查认证提供商
+        async function checkAuthProviders() {
+            const providersElement = document.getElementById('authProviders');
+            
+            try {
+                // 尝试通过测试邮箱检查可用的认证提供商
+                const testEmail = 'test@example.com';
+                await fetchSignInMethodsForEmail(auth, testEmail).then(() => {
+                    providersElement.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle-fill me-2"></i>邮箱/密码认证已启用
+                        </div>
+                    `;
+                }).catch(error => {
+                    if (error.code === 'auth/invalid-credential') {
+                        providersElement.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle-fill me-2"></i>邮箱/密码认证已启用
+                            </div>
+                        `;
+                    } else {
+                        throw error;
+                    }
+                });
+            } catch (error) {
+                console.error('检查认证提供商失败:', error);
+                providersElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        检查认证提供商失败: ${error.code} - ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 执行检查
+        checkAuthProviders();
+    </script>
+</body>
+</html> 
