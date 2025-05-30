@@ -1,6 +1,7 @@
 /* 全局样式 */
 body {
-    background-color: #f8f9fa;
+    background-color: #F0F5EC; /* 柔和的浅绿色背景 */
+    color: #3E4A3D; /* 比纯黑色柔和的深绿灰色 */
 }
 
 .container {
@@ -15,21 +16,25 @@ body {
 
 /* 卡片样式 */
 .card {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     border: none;
+    background-color: #FCFDF9; /* 偏米色的卡片背景 */
 }
 
 .card-header {
     font-weight: 500;
+    background-color: #E8F0E3; /* 浅绿背景 */
+    color: #506651; /* 深绿色文字 */
 }
 
 /* SKU结果样式 */
 .sku-results-container {
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid #e9ecef;
+    border: 1px solid #D8E4D0;
     border-radius: 0.25rem;
     padding: 0.5rem;
+    background-color: #F8FAF4; /* 浅绿色背景 */
 }
 
 #skuResults {
@@ -38,14 +43,15 @@ body {
 
 #skuResults .sku-item {
     padding: 0.5rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid #D8E4D0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: #3E4A3D;
 }
 
 #skuResults .sku-item:hover {
-    background-color: #f1f3f5;
+    background-color: #EFF4EA;
     cursor: pointer;
 }
 
@@ -65,21 +71,96 @@ body {
     margin-bottom: 8px;
 }
 
+/* 可点击选项样式 */
+.clickable-option {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 5px;
+    border: 1px solid #D8E4D0;
+    border-radius: 4px;
+    background-color: #F5F9F0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #506651;
+}
+
+.clickable-option:hover {
+    background-color: #E8F0E3;
+    border-color: #C7DDB9;
+}
+
+.clickable-option.selected {
+    background-color: #7FAC6C; /* 松柏绿，比蓝色更护眼 */
+    color: white;
+    border-color: #7FAC6C;
+}
+
 /* 结果高亮效果 */
 @keyframes highlight {
-    0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.5); }
-    70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(127, 172, 108, 0.5); } /* 使用松柏绿的透明度 */
+    70% { box-shadow: 0 0 0 10px rgba(127, 172, 108, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(127, 172, 108, 0); }
 }
 
 .highlight {
-    animation: highlight 1s ease-in-out;
+    animation: highlight 1.5s;
 }
 
 /* 复制成功提示 */
 .copy-success {
-    color: #198754;
-    transition: opacity 1s ease-in-out;
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(127, 172, 108, 0.9); /* 松柏绿 */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+.copy-sku-btn {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    padding: 0 0.4rem;
+    font-size: 0.8rem;
+    color: #5D8057;
+}
+
+.sku-item:hover .copy-sku-btn {
+    opacity: 1;
+}
+
+/* 单选按钮样式 */
+.form-check input[name="festival"]:checked + label,
+.form-check input[name="style"]:checked + label {
+    background-color: #7FAC6C; /* 松柏绿 */
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.form-check input[name="festival"] + label,
+.form-check input[name="style"] + label {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #D8E4D0;
+    transition: all 0.2s;
+    cursor: pointer;
+    background-color: #F5F9F0;
+    color: #506651;
+}
+
+.form-check input[name="festival"],
+.form-check input[name="style"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.form-check input[name="festival"] + label:hover,
+.form-check input[name="style"] + label:hover {
+    background-color: #E8F0E3;
 }
 
 /* 响应式调整 */
@@ -87,4 +168,62 @@ body {
     .row.mb-3 .col-md-2 {
         margin-bottom: 0.5rem;
     }
+    
+    .clickable-option {
+        padding: 4px 8px;
+        font-size: 0.9rem;
+    }
+}
+
+/* 覆盖Bootstrap默认颜色 */
+.text-primary {
+    color: #689F5C !important; /* 淡绿色 */
+}
+
+.bg-primary {
+    background-color: #689F5C !important; /* 淡绿色 */
+}
+
+.btn-primary {
+    background-color: #689F5C !important;
+    border-color: #689F5C !important;
+}
+
+.btn-primary:hover {
+    background-color: #5A8B4F !important;
+    border-color: #5A8B4F !important;
+}
+
+.text-info {
+    color: #60A1B1 !important; /* 柔和的蓝绿色 */
+}
+
+.bg-info {
+    background-color: #60A1B1 !important; /* 柔和的蓝绿色 */
+}
+
+.text-success {
+    color: #689F5C !important; /* 淡绿色 */
+}
+
+.bg-success {
+    background-color: #689F5C !important; /* 淡绿色 */
+}
+
+.text-danger {
+    color: #B17267 !important; /* 柔和的红褐色 */
+}
+
+.bg-danger {
+    background-color: #B17267 !important; /* 柔和的红褐色 */
+}
+
+.btn-outline-primary {
+    color: #689F5C !important;
+    border-color: #689F5C !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: #689F5C !important;
+    color: #fff !important;
 } 

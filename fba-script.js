@@ -1,6 +1,5 @@
-// FBA计算器脚本
-import { fbaDatabase } from './database-factory.js';
-import { auth, onAuthStateChanged } from './user-manager.js';
+// FBA计算器脚本 - 认证功能已禁用
+import { fbaDatabase } from './indexed-db-factory.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化数据
@@ -18,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('startDate').value = todayFormatted;
     document.getElementById('endDate').value = todayFormatted;
 
-    // 创建保存按钮元素
+    // 创建保存按钮元素，但隐藏它（认证功能已禁用）
     const saveButtonContainer = document.createElement('div');
     saveButtonContainer.innerHTML = `
         <button id="saveCalculation" class="btn btn-info w-100 mt-3" style="display: none;">
@@ -27,22 +26,16 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="saveMessage" class="alert mt-2" style="display: none;"></div>
     `;
     
-    // 将保存按钮添加到总费用卡片内
+    // 将保存按钮添加到总费用卡片内，但保持隐藏
     document.querySelector('.card.border-danger .card-body').appendChild(saveButtonContainer);
     
     const saveButton = document.getElementById('saveCalculation');
     const saveMessage = document.getElementById('saveMessage');
     
-    // 检查用户登录状态
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // 用户已登录，显示保存按钮
-            saveButton.style.display = 'block';
-        } else {
-            // 用户未登录，隐藏保存按钮
-            saveButton.style.display = 'none';
-        }
-    });
+    // 保持保存按钮隐藏（认证功能已禁用）
+    if (saveButton) {
+        saveButton.style.display = 'none';
+    }
 
     // ======== 滑动效果 ========
     const sliderWrapper = document.getElementById('sliderWrapper');
@@ -592,65 +585,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     }
 
-    // 保存计算结果
-    saveButton.addEventListener('click', async function() {
-        try {
-            // 检查是否有计算结果
-            const totalFee = parseFloat(document.getElementById('totalFee').textContent);
-            
-            if (isNaN(totalFee) || totalFee === 0) {
-                showSaveMessage('error', '请先计算费用再保存');
-                return;
-            }
-            
-            // 准备输入数据
-            const inputData = {
-                shipping: {
-                    length: document.getElementById('length').value,
-                    width: document.getElementById('width').value,
-                    height: document.getElementById('height').value,
-                    weight: document.getElementById('weight').value
-                },
-                storage: {
-                    length: document.getElementById('storageLength').value,
-                    width: document.getElementById('storageWidth').value,
-                    height: document.getElementById('storageHeight').value,
-                    startDate: document.getElementById('startDate').value,
-                    endDate: document.getElementById('endDate').value,
-                    quantity: document.getElementById('quantity').value
-                },
-                commission: {
-                    price: document.getElementById('price').value
-                }
-            };
-            
-            // 准备结果数据
-            const resultData = {
-                shippingFee: feeData.shippingFee,
-                storageFee: feeData.storageFee,
-                commissionFee: feeData.commissionFee,
-                totalFee: totalFee
-            };
-            
-            const now = new Date();
-            resultData.calculationTime = now.toLocaleString();
-            
-            // 如果用户已登录，保存计算结果
-            if (auth.currentUser) {
-                try {
-                    const result = await fbaDatabase.saveCalculation('all', inputData, resultData);
-                    
-                    if (result.success) {
-                        showSaveMessage('success', '计算结果已保存');
-                    }
-                } catch (error) {
-                    console.error('保存计算结果失败:', error);
-                }
-            }
-        } catch (error) {
-            showSaveMessage('error', `保存出错: ${error.message}`);
-            console.error('保存计算结果时出错:', error);
-        }
+    // 保存计算结果 - 由于认证已禁用，显示消息
+    saveButton.addEventListener('click', function() {
+        showSaveMessage('error', '保存功能已禁用');
     });
     
     // 显示保存消息
@@ -669,15 +606,4 @@ document.addEventListener('DOMContentLoaded', function() {
             saveMessage.style.display = 'none';
         }, 3000);
     }
-
-    // 在总费用计算后也添加保存按钮的显示逻辑
-    const originalCalculateTotal = calculateTotal;
-    calculateTotal = function() {
-        originalCalculateTotal();
-        
-        // 如果用户已登录，显示保存按钮
-        if (auth.currentUser) {
-            saveButton.style.display = 'block';
-        }
-    };
 }); 

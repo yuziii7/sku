@@ -1,7 +1,8 @@
 /* FBA计算器专用样式 */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f7f7f7;
+    background-color: #F0F5EC; /* 柔和的浅绿色背景 */
+    color: #3E4A3D; /* 比纯黑色柔和的深绿灰色 */
 }
 
 .container {
@@ -10,21 +11,25 @@ body {
 
 /* 卡片样式 */
 .card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s, box-shadow 0.2s;
     margin-bottom: 20px;
     border-radius: 0.5rem;
     overflow: hidden;
+    background-color: #FCFDF9; /* 偏米色的卡片背景 */
+    border: none;
 }
 
 .card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
 .card-header {
     font-weight: 500;
     padding: 0.8rem 1.2rem;
+    background-color: #E8F0E3; /* 浅绿背景 */
+    color: #506651; /* 深绿色文字 */
 }
 
 .card-body {
@@ -33,32 +38,32 @@ body {
 
 .card-footer {
     padding: 0.8rem 1.2rem;
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: #F8FAF4; /* 浅绿色背景 */
 }
 
 /* 导航选项卡 */
 .nav-tabs .nav-link {
-    color: #495057;
+    color: #506651; /* 深绿色文字 */
     font-weight: 500;
     padding: 0.7rem 1.2rem;
     border-radius: 0.25rem 0.25rem 0 0;
 }
 
 .nav-tabs .nav-link.active {
-    color: #198754;
+    color: #689F5C; /* 松柏绿 */
     font-weight: 600;
-    border-bottom: 2px solid #198754;
+    border-bottom: 2px solid #689F5C; /* 松柏绿 */
 }
 
 /* 结果显示区域 */
 .result-area {
-    background-color: #f8f9fa;
+    background-color: #F8FAF4; /* 浅绿色背景 */
     border-radius: 0.5rem;
     padding: 15px;
     min-height: 120px;
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
-    border: 1px solid #e9ecef;
+    border: 1px solid #D8E4D0;
     white-space: pre-line;
     overflow-y: auto;
     line-height: 1.5;
@@ -66,8 +71,8 @@ body {
 
 /* 信息框 */
 .info-box {
-    background-color: #e9f7fb;
-    border-left: 4px solid #17a2b8;
+    background-color: #E8F0E3; /* 浅绿背景 */
+    border-left: 4px solid #689F5C; /* 松柏绿 */
     padding: 12px;
     border-radius: 4px;
     margin-top: 15px;
@@ -75,7 +80,7 @@ body {
 
 .info-box h6 {
     margin-bottom: 8px;
-    color: #0c5460;
+    color: #506651; /* 深绿色文字 */
 }
 
 .info-box ul {
@@ -88,9 +93,9 @@ body {
     text-align: center;
     padding: 20px 15px;
     border-radius: 8px;
-    background-color: #f8f9fa;
+    background-color: #F5F9F0; /* 浅绿色背景 */
     height: 100%;
-    border: 1px solid #e9ecef;
+    border: 1px solid #D8E4D0;
     transition: transform 0.2s;
 }
 
@@ -99,26 +104,36 @@ body {
 }
 
 .fee-box h6 {
-    color: #6c757d;
+    color: #506651; /* 深绿色文字 */
     margin-bottom: 10px;
 }
 
 .total-fee {
-    background-color: #fff8f8;
-    border-left: 4px solid #dc3545;
+    background-color: #F0F5EC; /* 柔和的浅绿色背景 */
+    border-left: 4px solid #B17267; /* 柔和的红褐色 */
 }
 
 /* 数字输入框样式 */
 input[type="number"] {
     text-align: right;
-    background-color: #fff;
-    border: 1px solid #ced4da;
+    background-color: #FCFDF9; /* 偏米色的背景 */
+    border: 1px solid #D8E4D0;
     transition: border-color 0.2s;
 }
 
 input[type="number"]:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: #A9C795;
+    box-shadow: 0 0 0 0.2rem rgba(104, 159, 92, 0.25); /* 松柏绿 */
+}
+
+input[type="date"] {
+    background-color: #FCFDF9; /* 偏米色的背景 */
+    border: 1px solid #D8E4D0;
+}
+
+input[type="date"]:focus {
+    border-color: #A9C795;
+    box-shadow: 0 0 0 0.2rem rgba(104, 159, 92, 0.25); /* 松柏绿 */
 }
 
 /* 按钮样式 */
@@ -128,9 +143,30 @@ input[type="number"]:focus {
     transition: all 0.2s;
 }
 
+.btn-success {
+    background-color: #689F5C !important; /* 松柏绿 */
+    border-color: #689F5C !important; /* 松柏绿 */
+}
+
+.btn-warning {
+    background-color: #E8AD40 !important; /* 更温和的黄色 */
+    border-color: #E8AD40 !important;
+    color: #3E4A3D !important; /* 深绿灰色文字 */
+}
+
+.btn-info {
+    background-color: #60A1B1 !important; /* 柔和的蓝绿色 */
+    border-color: #60A1B1 !important;
+}
+
+.btn-danger {
+    background-color: #B17267 !important; /* 柔和的红褐色 */
+    border-color: #B17267 !important;
+}
+
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .btn:active {
@@ -148,13 +184,13 @@ input[type="number"]:focus {
 }
 
 .table thead th {
-    border-bottom: 2px solid #dee2e6;
-    background-color: #f8f9fa;
+    border-bottom: 2px solid #D8E4D0;
+    background-color: #F5F9F0; /* 浅绿色背景 */
 }
 
 /* 高亮效果 */
 @keyframes highlight {
-    0% { background-color: rgba(255, 255, 0, 0.2); }
+    0% { background-color: rgba(104, 159, 92, 0.2); } /* 松柏绿透明度 */
     100% { background-color: transparent; }
 }
 
@@ -182,9 +218,9 @@ input[type="number"]:focus {
 .tooltip-inner {
     max-width: 200px;
     padding: 8px 12px;
-    color: #fff;
+    color: #F0F5EC; /* 柔和的浅绿色背景 */
     text-align: center;
-    background-color: #000;
+    background-color: #3E4A3D; /* 深绿灰色 */
     border-radius: 4px;
 }
 
@@ -195,17 +231,17 @@ input[type="number"]:focus {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #F0F5EC; /* 柔和的浅绿色背景 */
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #bbb;
+    background: #A9C795; /* 浅松柏绿 */
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #999;
+    background: #7FAC6C; /* 松柏绿 */
 }
 
 /* 滑动容器样式 */
@@ -242,7 +278,7 @@ input[type="number"]:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     border: none;
     transition: all 0.3s ease;
     padding: 0 20px;
@@ -256,17 +292,17 @@ input[type="number"]:focus {
 
 .slide-button:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
 .slide-button.btn-calculator {
-    background-color: #198754;
+    background-color: #689F5C; /* 松柏绿 */
     color: white;
     display: none;
 }
 
 .slide-button.btn-rules {
-    background-color: #0dcaf0;
+    background-color: #60A1B1; /* 柔和的蓝绿色 */
     color: white;
     display: flex;
 }
@@ -293,7 +329,7 @@ input[type="number"]:focus {
 /* 结果区域样式 */
 .result-area {
     min-height: 120px;
-    background-color: #f8f9fa;
+    background-color: #F8FAF4; /* 浅绿色背景 */
     border-radius: 4px;
     padding: 10px;
     white-space: pre-line;
@@ -305,16 +341,16 @@ input[type="number"]:focus {
     padding: 15px;
     text-align: center;
     border-radius: 6px;
-    background-color: rgba(0,0,0,0.03);
+    background-color: #F5F9F0; /* 浅绿色背景 */
 }
 
 .total-fee {
-    background-color: rgba(220,53,69,0.1);
+    background-color: #FAF5F4; /* 浅红色背景 */
 }
 
 /* 规则信息框 */
 .info-box {
-    background-color: #f8f9fa;
+    background-color: #F8FAF4; /* 浅绿色背景 */
     border-radius: 6px;
     padding: 10px 15px;
 }
@@ -325,13 +361,13 @@ input[type="number"]:focus {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%) scale(0.8);
-    background-color: rgba(13, 202, 240, 0.9);
+    background-color: rgba(96, 161, 177, 0.9); /* 柔和的蓝绿色透明度 */
     color: white;
     padding: 15px 30px;
     border-radius: 50px;
     font-size: 1.2rem;
     font-weight: 600;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
     z-index: 2000;
     opacity: 0;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

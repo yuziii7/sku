@@ -81,5 +81,4 @@ server.listen(PORT, () => {
   console.log('\n特别提示:');
   console.log('1. 请在浏览器中访问 http://localhost:3000');
   console.log('2. 服务器已配置CORS，允许所有域名访问');
-  console.log('3. 请确保Firebase控制台已将localhost:3000添加到授权域名中\n');
 }); 

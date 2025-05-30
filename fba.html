@@ -7,11 +7,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="fba-styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-light">
+<body>
     <div class="container my-4">
         <!-- 顶部导航栏 -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow-sm mb-4">
+        <nav class="navbar navbar-expand-lg navbar-light rounded shadow-sm mb-4">
             <div class="container-fluid">
                 <a class="navbar-brand" href="index.html">
                     <i class="bi bi-house-door text-success me-2"></i>亚马逊卖家工具集
@@ -35,7 +36,7 @@
             </div>
         </nav>
         
-        <h1 class="text-center mb-4 text-success">FBA综合费用计算器</h1>
+        <h1 class="text-center mb-4 text-primary">FBA综合费用计算器</h1>
         
         <!-- 滑动容器 -->
         <div class="slider-container">
@@ -46,8 +47,8 @@
                     <div class="row mb-4">
                         <!-- 物流配送费计算 -->
                         <div class="col-md-4">
-                            <div class="card h-100 border-success">
-                                <div class="card-header bg-success text-white">
+                            <div class="card h-100">
+                                <div class="card-header">
                                     <h5 class="mb-0">物流配送费计算</h5>
                                 </div>
                                 <div class="card-body">
@@ -74,7 +75,7 @@
                                         <!-- 结果将在这里显示 -->
                                     </div>
                                 </div>
-                                <div class="card-footer bg-light">
+                                <div class="card-footer">
                                     <small>小号物件：长度≤15英寸，重量≤16盎司</small>
                                 </div>
                             </div>
@@ -82,8 +83,8 @@
                         
                         <!-- 仓储费用计算 -->
                         <div class="col-md-4">
-                            <div class="card h-100 border-warning">
-                                <div class="card-header bg-warning text-dark">
+                            <div class="card h-100">
+                                <div class="card-header">
                                     <h5 class="mb-0">仓储费用计算</h5>
                                 </div>
                                 <div class="card-body">
@@ -123,7 +124,7 @@
                                         <!-- 结果将在这里显示 -->
                                     </div>
                                 </div>
-                                <div class="card-footer bg-light">
+                                <div class="card-footer">
                                     <small>1-9月：$0.78/立方英尺；10-12月：$2.4/立方英尺</small>
                                 </div>
                             </div>
@@ -131,8 +132,8 @@
                         
                         <!-- 佣金计算 -->
                         <div class="col-md-4">
-                            <div class="card h-100 border-info">
-                                <div class="card-header bg-info text-white">
+                            <div class="card h-100">
+                                <div class="card-header">
                                     <h5 class="mb-0">佣金计算</h5>
                                 </div>
                                 <div class="card-body">
@@ -163,12 +164,12 @@
                     </div>
                     
                     <!-- 总费用计算区域 -->
-                    <div class="card border-danger mb-4">
-                        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">总费用计算</h5>
                             <div>
-                                <button id="calculateTotal" class="btn btn-sm btn-light me-2">计算总费用</button>
-                                <button id="clearAll" class="btn btn-sm btn-outline-light">清除所有费用</button>
+                                <button id="calculateTotal" class="btn btn-primary me-2">计算总费用</button>
+                                <button id="clearAll" class="btn btn-outline-secondary">清除所有费用</button>
                             </div>
                         </div>
                         <div class="card-body">
@@ -182,7 +183,7 @@
                                 <div class="col-md-3">
                                     <div class="fee-box">
                                         <h6>仓储费用</h6>
-                                        <div class="h4 text-warning">$<span id="storageFee">0.00</span></div>
+                                        <div class="h4 text-primary">$<span id="storageFee">0.00</span></div>
                                     </div>
                                 </div>
                                 <div class="col-md-3">

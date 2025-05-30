@@ -1,5 +1,4 @@
-import { skuDatabase } from './database-factory.js';
-import { auth, onAuthStateChanged } from './user-manager.js';
+import { skuDatabase } from './indexed-db-factory.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化数据
@@ -162,34 +161,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 填充复选框
+    // 填充可点击选项（替代原来的复选框）
     function populateCheckboxes(selector, options, type) {
         const container = document.querySelector(selector);
         if (!container) return;
         
         container.innerHTML = '';
         options.forEach(option => {
-            const div = document.createElement('div');
-            div.className = type === 'color' ? 'color-option' : 'option-checkbox';
+            // 创建可点击的选项元素
+            const clickableOption = document.createElement('div');
+            clickableOption.className = 'clickable-option';
+            clickableOption.textContent = option;
+            clickableOption.dataset.value = option;
+            clickableOption.dataset.type = type;
             
-            const id = `${type}-${option.replace(/\s+/g, '-')}`;
+            // 添加点击事件
+            clickableOption.addEventListener('click', function() {
+                this.classList.toggle('selected');
+                updateSelectedCount(type);
+            });
             
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.className = 'form-check-input';
-            input.id = id;
-            input.value = option;
-            input.dataset.type = type;
-            
-            const label = document.createElement('label');
-            label.className = 'form-check-label ms-1';
-            label.htmlFor = id;
-            label.textContent = option;
-            
-            div.appendChild(input);
-            div.appendChild(label);
-            container.appendChild(div);
+            container.appendChild(clickableOption);
         });
+        
+        // 更新初始计数
+        updateSelectedCount(type);
+    }
+    
+    // 更新已选择项目的计数
+    function updateSelectedCount(type) {
+        const countElement = document.getElementById(`${type}SelectedCount`);
+        if (countElement) {
+            const count = document.querySelectorAll(`#${type}Options .clickable-option.selected`).length;
+            countElement.textContent = count;
+        }
     }
     
     // 获取所有动物选项
@@ -325,10 +330,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return "XX";
     }
     
+    // 修改获取多选的人群值的方法
+    function getSelectedOptions(selector) {
+        return [...document.querySelectorAll(`${selector} .clickable-option.selected`)].map(el => el.dataset.value);
+    }
+    
     // 生成SKU
     function generateSKU() {
         // 获取选择的值
-        const festival = document.querySelector('#festival').value;
+        const festival = document.querySelector('input[name="festival"]:checked')?.value || '';
         
         // 获取类别选择
         const selectedAnimal = document.querySelector('#animal').value;
@@ -355,16 +365,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 获取款式选择
-        const style = document.querySelector('#style').value;
+        const style = document.querySelector('input[name="style"]:checked')?.value || '';
         
-        // 获取多选的人群
-        const selectedCrowds = [...document.querySelectorAll('#crowdOptions input:checked')].map(el => el.value);
-        
-        // 获取多选的尺码
-        const selectedSizes = [...document.querySelectorAll('#sizeOptions input:checked')].map(el => el.value);
-        
-        // 获取多选的颜色
-        const selectedColors = [...document.querySelectorAll('#colorOptions input:checked')].map(el => el.value);
+        // 获取多选的人群、尺码和颜色（使用新的获取方法）
+        const selectedCrowds = getSelectedOptions('#crowdOptions');
+        const selectedSizes = getSelectedOptions('#sizeOptions');
+        const selectedColors = getSelectedOptions('#colorOptions');
         
         // 检查必填项
         const parentSKUElement = document.querySelector('#parentSKU');
@@ -454,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 显示所有有效的SKU组合
+        const skuItems = [];
         allSKUs.forEach((item, index) => {
             const skuItem = document.createElement('div');
             skuItem.className = 'sku-item';
@@ -462,112 +469,72 @@ document.addEventListener('DOMContentLoaded', function() {
             const skuCode = document.createElement('span');
             skuCode.textContent = item.sku;
             
-            const skuComment = document.createElement('span');
-            skuComment.className = 'text-muted ms-3';
+            const skuComment = document.createElement('small');
+            skuComment.className = 'text-muted ms-2';
             skuComment.textContent = `# ${item.crowd}-${item.size}-${item.color}`;
+            
+            // 添加复制按钮
+            const copyButton = document.createElement('button');
+            copyButton.className = 'btn btn-sm btn-outline-secondary copy-sku-btn ms-2';
+            copyButton.innerHTML = '<i class="bi bi-clipboard"></i>';
+            copyButton.title = '复制此SKU';
+            copyButton.dataset.sku = item.sku;
+            copyButton.onclick = function(e) {
+                e.stopPropagation(); // 防止触发删除事件
+                copySingleSKU(item.sku);
+            };
             
             skuItem.appendChild(skuCode);
             skuItem.appendChild(skuComment);
-            skuResultsContainer.appendChild(skuItem);
+            skuItem.appendChild(copyButton);
+            skuItems.push(skuItem);
         });
         
-        // 更新结果数量显示
-        document.querySelector('#skuCount').textContent = `${allSKUs.length}个`;
-        
-        // 闪烁效果提示用户查看结果
-        document.querySelector('.card-header.bg-success').classList.add('highlight');
-        document.querySelector('.card-header.bg-info').classList.add('highlight');
-        
-        // 保存生成的SKU以便复制
-        window.generatedSKUs = allSKUs;
-        
-        // 如果用户已登录，显示保存按钮
-        if (auth.currentUser) {
-            // 添加保存按钮（如果不存在）
-            let saveButton = document.getElementById('saveSKUs');
-            if (!saveButton) {
-                saveButton = document.createElement('button');
-                saveButton.id = 'saveSKUs';
-                saveButton.className = 'btn btn-primary mt-3 w-100';
-                saveButton.innerHTML = '<i class="bi bi-cloud-upload"></i> 保存SKU到数据库';
-                
-                // 添加到结果区域
-                const resultContainer = document.querySelector('.card.bg-light .card-body');
-                resultContainer.appendChild(saveButton);
-                
-                // 添加提示消息元素
-                const saveMessage = document.createElement('div');
-                saveMessage.id = 'saveMessage';
-                saveMessage.className = 'alert mt-2';
-                saveMessage.style.display = 'none';
-                resultContainer.appendChild(saveMessage);
-                
-                // 绑定保存事件
-                saveButton.addEventListener('click', saveSKUsToDatabase);
-            }
-            
-            saveButton.style.display = 'block';
-        }
-    }
-    
-    // 保存SKU到数据库
-    async function saveSKUsToDatabase() {
-        try {
-            // 获取父SKU
-            const parentSKU = document.querySelector('#parentSKU').textContent;
-            
-            // 验证是否有SKU可保存
+        // 在页面上显示SKU结果
+        skuItems.forEach(item => {
+            skuResultsContainer.appendChild(item);
+        });
+
+        // 添加保存按钮
+        const saveButtonContainer = document.createElement('div');
+        saveButtonContainer.innerHTML = `
+            <button id="saveSKUs" class="btn btn-success btn-sm mt-3">
+                <i class="bi bi-save"></i> 保存SKU到数据库
+            </button>
+            <div id="saveMessage" class="alert mt-2" style="display: none;"></div>
+        `;
+        skuResultsContainer.appendChild(saveButtonContainer);
+
+        // 绑定保存按钮事件
+        document.getElementById('saveSKUs')?.addEventListener('click', function() {
+            // 检查是否有SKU可保存
             if (!window.generatedSKUs || window.generatedSKUs.length === 0) {
                 showSaveMessage('error', '没有可保存的SKU');
                 return;
             }
             
-            // 获取选择的品牌、类别和款式信息
-            const festival = document.querySelector('#festival').value;
-            const animal = document.querySelector('#animal').value;
-            const profession = document.querySelector('#profession').value;
-            const humor = document.querySelector('#humor').value;
-            const role = document.querySelector('#role').value;
-            const style = document.querySelector('#style').value;
+            // 显示保存模态框
+            const saveSkuModal = new bootstrap.Modal(document.getElementById('saveSkuModal'));
             
-            // 确定选中的类别
-            let category = '';
-            let categoryValue = '';
-            if (animal) {
-                category = 'animal';
-                categoryValue = animal;
-            } else if (profession) {
-                category = 'profession';
-                categoryValue = profession;
-            } else if (humor) {
-                category = 'humor';
-                categoryValue = humor;
-            } else if (role) {
-                category = 'role';
-                categoryValue = role;
-            }
+            // 更新模态框中的信息
+            document.getElementById('modalParentSku').textContent = parentSKUElement.textContent;
+            document.getElementById('modalSkuCount').textContent = window.generatedSKUs.length;
             
-            // 保存主SKU信息
-            const mainSkuData = {
-                sku: parentSKU,
-                brand: festival || '',
-                category: category || '',
-                productName: categoryValue || '',
-                additional: style || ''
-            };
+            // 重置表单
+            document.getElementById('skuTitle').value = '';
+            document.getElementById('skuDescription').value = '';
+            document.getElementById('saveAllSkus').checked = true;
+            document.getElementById('saveSkuAlert').style.display = 'none';
             
-            // 保存到数据库
-            const result = await skuDatabase.saveSku(mainSkuData);
-            
-            if (result.success) {
-                showSaveMessage('success', 'SKU已成功保存到数据库');
-            } else {
-                showSaveMessage('error', `保存失败: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('保存SKU失败:', error);
-            showSaveMessage('error', `保存出错: ${error.message}`);
-        }
+            // 显示模态框
+            saveSkuModal.show();
+        });
+        
+        // 更新计数
+        document.querySelector('#skuCount').textContent = `${allSKUs.length}个`;
+        
+        // 全局保存
+        window.generatedSKUs = allSKUs;
     }
     
     // 显示保存消息
@@ -644,6 +611,46 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('#skuCount').textContent = `${allItems.length}个`;
     }
     
+    // 复制单个SKU
+    function copySingleSKU(sku) {
+        if (!sku) return;
+        
+        navigator.clipboard.writeText(sku)
+            .then(() => {
+                // 显示复制成功提示
+                const tooltip = document.createElement('div');
+                tooltip.className = 'copy-success-tooltip';
+                tooltip.textContent = '✓ 复制成功';
+                tooltip.style.position = 'fixed';
+                tooltip.style.top = '50%';
+                tooltip.style.left = '50%';
+                tooltip.style.transform = 'translate(-50%, -50%)';
+                tooltip.style.padding = '8px 16px';
+                tooltip.style.backgroundColor = 'rgba(40, 167, 69, 0.9)';
+                tooltip.style.color = 'white';
+                tooltip.style.borderRadius = '4px';
+                tooltip.style.zIndex = '1050';
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.3s ease';
+                
+                document.body.appendChild(tooltip);
+                
+                // 显示然后淡出
+                setTimeout(() => {
+                    tooltip.style.opacity = '1';
+                    setTimeout(() => {
+                        tooltip.style.opacity = '0';
+                        setTimeout(() => {
+                            document.body.removeChild(tooltip);
+                        }, 300);
+                    }, 1500);
+                }, 10);
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+            });
+    }
+    
     // 复制SPU
     function copySPU() {
         const spu = document.querySelector('#parentSKU').textContent;
@@ -712,22 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     modal.show();
                 });
             }
-        });
-        
-        // 添加节日
-        document.querySelector('#addFestival').addEventListener('click', function() {
-            currentOptionType = 'festival';
-            document.querySelector('.modal-title').textContent = '添加节日';
-            document.querySelector('#additionalFields').innerHTML = '';
-            modal.show();
-        });
-        
-        // 添加款式
-        document.querySelector('#addStyle').addEventListener('click', function() {
-            currentOptionType = 'style';
-            document.querySelector('.modal-title').textContent = '添加款式';
-            document.querySelector('#additionalFields').innerHTML = '';
-            modal.show();
         });
         
         // 保存选项
@@ -802,36 +793,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 删除节日
-        document.querySelector('#deleteFestival').addEventListener('click', function() {
-            currentOptionType = 'festival';
-            const options = data.customOptions.festival.map(item => item[0]);
-            
-            if (options.length === 0) {
-                alert('没有可删除的自定义节日!');
-                return;
-            }
-            
-            document.querySelector('.modal-title').textContent = '删除节日';
-            populateDeleteOptions(options);
-            modal.show();
-        });
-        
-        // 删除款式
-        document.querySelector('#deleteStyle').addEventListener('click', function() {
-            currentOptionType = 'style';
-            const options = data.customOptions.style.map(item => item[0]);
-            
-            if (options.length === 0) {
-                alert('没有可删除的自定义款式!');
-                return;
-            }
-            
-            document.querySelector('.modal-title').textContent = '删除款式';
-            populateDeleteOptions(options);
-            modal.show();
-        });
-        
         // 确认删除
         document.querySelector('#confirmDelete').addEventListener('click', function() {
             const selectedOption = document.querySelector('#deleteOption').value;
@@ -901,150 +862,42 @@ document.addEventListener('DOMContentLoaded', function() {
         handleDeleteOption();
     }
     
+    // 保存SKU到数据库
+    async function saveSKUsToDatabase() {
+        showSaveMessage('error', '保存功能已被禁用');
+    }
+    
     // 初始化
     function init() {
-        loadCustomOptions();
-        initializeOptions();
-        initEventListeners();
+        console.log("初始化SKU生成器...");
+        
+        try {
+            // 加载自定义选项
+            loadCustomOptions();
+            
+            // 初始化选项
+            initializeOptions();
+            
+            // 添加事件监听器
+            initEventListeners();
+            
+            // 默认选中第一个节日和款式选项
+            const firstFestivalOption = document.querySelector('input[name="festival"]');
+            if (firstFestivalOption) {
+                firstFestivalOption.checked = true;
+            }
+            
+            const firstStyleOption = document.querySelector('input[name="style"]');
+            if (firstStyleOption) {
+                firstStyleOption.checked = true;
+            }
+            
+            console.log("初始化完成");
+        } catch (error) {
+            console.error("初始化失败:", error);
+        }
     }
     
     // 启动应用
     init();
-    
-    // 用户认证和历史记录相关功能
-    // 获取DOM元素
-    const loginNavItem = document.getElementById('loginNavItem');
-    const userNavItem = document.getElementById('userNavItem');
-    const userNameElement = document.getElementById('userName');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const showHistoryBtn = document.getElementById('showHistory');
-    const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
-    const historyContent = document.getElementById('historyContent');
-    const historyLoading = document.getElementById('historyLoading');
-    
-    // 监听用户登录状态
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // 用户已登录
-            loginNavItem.classList.add('d-none');
-            userNavItem.classList.remove('d-none');
-            userNameElement.textContent = user.email ? user.email.split('@')[0] : '用户';
-        } else {
-            // 用户未登录
-            loginNavItem.classList.remove('d-none');
-            userNavItem.classList.add('d-none');
-        }
-    });
-    
-    // 退出登录
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            signOut(auth).then(() => {
-                // 成功退出登录
-                alert('您已成功退出登录');
-                loginNavItem.classList.remove('d-none');
-                userNavItem.classList.add('d-none');
-            }).catch((error) => {
-                console.error('退出登录失败:', error);
-                alert('退出登录失败，请重试');
-            });
-        });
-    }
-    
-    // 显示历史记录
-    if (showHistoryBtn) {
-        showHistoryBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // 打开模态窗口
-            historyModal.show();
-            
-            // 加载历史记录
-            loadSkuHistory();
-        });
-    }
-    
-    // 加载SKU历史记录
-    async function loadSkuHistory() {
-        // 显示加载中
-        historyLoading.style.display = 'block';
-        historyContent.innerHTML = '';
-        
-        try {
-            const result = await skuDatabase.getSkuHistory();
-            
-            // 隐藏加载中
-            historyLoading.style.display = 'none';
-            
-            if (result.success) {
-                if (result.history.length === 0) {
-                    historyContent.innerHTML = '<div class="text-center py-4">暂无SKU历史记录</div>';
-                    return;
-                }
-                
-                // 构建历史记录HTML
-                let historyHTML = '<div class="list-group">';
-                
-                result.history.forEach(item => {
-                    const date = new Date(item.createdAt);
-                    const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    
-                    historyHTML += `
-                        <div class="list-group-item list-group-item-action" data-id="${item.id}">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">${item.sku}</h5>
-                                <div>
-                                    <button class="btn btn-sm btn-outline-danger delete-sku-btn" data-id="${item.id}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <p class="mb-1">${item.brand || ''} ${item.category || ''} ${item.productName || ''} ${item.color || ''} ${item.size || ''}</p>
-                            <small class="text-muted">${dateStr}</small>
-                        </div>
-                    `;
-                });
-                
-                historyHTML += '</div>';
-                historyContent.innerHTML = historyHTML;
-                
-                // 绑定删除按钮事件
-                document.querySelectorAll('.delete-sku-btn').forEach(btn => {
-                    btn.addEventListener('click', async function(e) {
-                        e.stopPropagation();
-                        const skuId = this.getAttribute('data-id');
-                        
-                        if (confirm('确定要删除这个SKU记录吗？')) {
-                            try {
-                                const result = await skuDatabase.deleteSku(skuId);
-                                
-                                if (result.success) {
-                                    // 删除成功，移除对应的列表项
-                                    this.closest('.list-group-item').remove();
-                                    
-                                    // 如果没有剩余项，显示空提示
-                                    if (document.querySelectorAll('.list-group-item').length === 0) {
-                                        historyContent.innerHTML = '<div class="text-center py-4">暂无SKU历史记录</div>';
-                                    }
-                                } else {
-                                    alert(`删除失败: ${result.message}`);
-                                }
-                            } catch (error) {
-                                console.error('删除SKU记录失败:', error);
-                                alert('删除失败，请重试');
-                            }
-                        }
-                    });
-                });
-            } else {
-                historyContent.innerHTML = `<div class="text-center py-4 text-danger">加载失败：${result.message}</div>`;
-            }
-        } catch (error) {
-            historyLoading.style.display = 'none';
-            historyContent.innerHTML = '<div class="text-center py-4 text-danger">加载出错，请重试</div>';
-            console.error('加载SKU历史记录出错:', error);
-        }
-    }
 }); 
