@@ -1,7 +1,32 @@
-// FBA计算器脚本 - 认证功能已禁用
-import { fbaDatabase } from './indexed-db-factory.js';
+// FBA计算器脚本 - 修复版
+// 认证功能已禁用，仅提供本地计算
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("FBA计算器脚本已加载");
+    
+    // 定义一个临时的fbaDatabase对象（如果导入失败时使用）
+    let fbaDatabase = {
+        saveCalculation: async function() { 
+            return { success: false, message: '保存功能已禁用' }; 
+        },
+        getCalculationHistory: async function() { 
+            return { success: true, history: [] }; 
+        }
+    };
+    
+    // 尝试异步导入数据库模块
+    (async function loadDatabase() {
+        try {
+            const module = await import('./indexed-db-factory.js');
+            if (module && module.fbaDatabase) {
+                fbaDatabase = module.fbaDatabase;
+                console.log("数据库模块加载成功");
+            }
+        } catch (error) {
+            console.warn("导入数据库模块失败，将使用本地计算模式:", error);
+        }
+    })();
+    
     // 初始化数据
     const feeData = {
         shippingFee: 0.0,
@@ -14,20 +39,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const todayFormatted = today.toISOString().split('T')[0];
     
     // 设置默认开始日期和结束日期
-    document.getElementById('startDate').value = todayFormatted;
-    document.getElementById('endDate').value = todayFormatted;
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput) startDateInput.value = todayFormatted;
+    if (endDateInput) endDateInput.value = todayFormatted;
 
     // 创建保存按钮元素，但隐藏它（认证功能已禁用）
-    const saveButtonContainer = document.createElement('div');
-    saveButtonContainer.innerHTML = `
-        <button id="saveCalculation" class="btn btn-info w-100 mt-3" style="display: none;">
-            <i class="bi bi-cloud-upload"></i> 保存计算结果
-        </button>
-        <div id="saveMessage" class="alert mt-2" style="display: none;"></div>
-    `;
-    
-    // 将保存按钮添加到总费用卡片内，但保持隐藏
-    document.querySelector('.card.border-danger .card-body').appendChild(saveButtonContainer);
+    try {
+        const totalFeeContainer = document.querySelector('.card-body');
+        if (totalFeeContainer) {
+            const saveButtonContainer = document.createElement('div');
+            saveButtonContainer.innerHTML = `
+                <button id="saveCalculation" class="btn btn-info w-100 mt-3" style="display: none;">
+                    <i class="bi bi-cloud-upload"></i> 保存计算结果
+                </button>
+                <div id="saveMessage" class="alert mt-2" style="display: none;"></div>
+            `;
+            totalFeeContainer.appendChild(saveButtonContainer);
+        }
+    } catch (error) {
+        console.warn("创建保存按钮失败:", error);
+    }
     
     const saveButton = document.getElementById('saveCalculation');
     const saveMessage = document.getElementById('saveMessage');
@@ -42,31 +75,81 @@ document.addEventListener('DOMContentLoaded', function() {
     const slideToRulesBtn = document.getElementById('slideToRules');
     const slideToCalculatorBtn = document.getElementById('slideToCalculator');
     
-    // 确保按钮初始状态正确
-    function updateButtonVisibility() {
-        if (sliderWrapper.classList.contains('show-rules')) {
-            slideToRulesBtn.style.display = 'none';
-            slideToCalculatorBtn.style.display = 'flex';
-        } else {
-            slideToRulesBtn.style.display = 'flex';
-            slideToCalculatorBtn.style.display = 'none';
+    // 确保按钮和滑动容器都存在
+    if (sliderWrapper && slideToRulesBtn && slideToCalculatorBtn) {
+        // 确保按钮初始状态正确
+        function updateButtonVisibility() {
+            if (sliderWrapper.classList.contains('show-rules')) {
+                slideToRulesBtn.style.display = 'none';
+                slideToCalculatorBtn.style.display = 'flex';
+            } else {
+                slideToRulesBtn.style.display = 'flex';
+                slideToCalculatorBtn.style.display = 'none';
+            }
         }
+        
+        // 点击切换到规则页
+        slideToRulesBtn.addEventListener('click', function() {
+            sliderWrapper.classList.add('show-rules');
+            updateButtonVisibility();
+        });
+        
+        // 点击切换到计算器页
+        slideToCalculatorBtn.addEventListener('click', function() {
+            sliderWrapper.classList.remove('show-rules');
+            updateButtonVisibility();
+        });
+        
+        // 初始化按钮状态
+        updateButtonVisibility();
+    } else {
+        console.warn("滑动容器或按钮不存在，滑动功能将不可用");
+    }
+
+    // ======== 输入验证辅助函数 ========
+    
+    // 获取并验证数值输入
+    function getNumberInput(id, errorMessage) {
+        const input = document.getElementById(id);
+        if (!input) {
+            throw new Error(`找不到ID为${id}的输入框`);
+        }
+        
+        const value = parseFloat(input.value);
+        if (isNaN(value) || value <= 0) {
+            throw new Error(errorMessage || `${id}必须是大于0的数值`);
+        }
+        
+        return value;
     }
     
-    // 点击切换到规则页
-    slideToRulesBtn.addEventListener('click', function() {
-        sliderWrapper.classList.add('show-rules');
-        updateButtonVisibility();
-    });
+    // 获取并验证日期输入
+    function getDateInput(id, errorMessage) {
+        const input = document.getElementById(id);
+        if (!input) {
+            throw new Error(`找不到ID为${id}的日期输入框`);
+        }
+        
+        const value = input.value;
+        if (!value) {
+            throw new Error(errorMessage || `${id}必须选择有效日期`);
+        }
+        
+        return value;
+    }
     
-    // 点击切换到计算器页
-    slideToCalculatorBtn.addEventListener('click', function() {
-        sliderWrapper.classList.remove('show-rules');
-        updateButtonVisibility();
-    });
-    
-    // 初始化按钮状态
-    updateButtonVisibility();
+    // 显示计算结果
+    function displayResult(id, text) {
+        const resultElement = document.getElementById(id);
+        if (!resultElement) {
+            console.error(`找不到ID为${id}的结果显示区域`);
+            alert(`结果显示区域"${id}"不存在，请检查HTML结构`);
+            return false;
+        }
+        
+        resultElement.textContent = text;
+        return true;
+    }
 
     // ======== 物流配送费计算 ========
     
@@ -141,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (chargeable_weight <= 48) {
                 return 6.81;
             } else {
-                const additional_weight = Math.ceil((chargeable_weight - 48) / 0.5);
+                const additional_weight = Math.ceil((chargeable_weight - 48) / 8);
                 return 6.92 + additional_weight * 0.16;
             }
         }
@@ -152,21 +235,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 计算和显示物流费用
     function calculateAndDisplayShipping() {
+        console.log("开始计算物流配送费");
         try {
             // 获取输入值
-            const length_cm = parseFloat(document.getElementById('length').value);
-            const width_cm = parseFloat(document.getElementById('width').value);
-            const height_cm = parseFloat(document.getElementById('height').value);
-            const actual_weight_g = parseFloat(document.getElementById('weight').value);
+            const length_cm = getNumberInput('length', '长度必须是大于0的数值');
+            const width_cm = getNumberInput('width', '宽度必须是大于0的数值');
+            const height_cm = getNumberInput('height', '高度必须是大于0的数值');
+            const actual_weight_g = getNumberInput('weight', '重量必须是大于0的数值');
             
-            // 验证输入
-            if (isNaN(length_cm) || isNaN(width_cm) || isNaN(height_cm) || isNaN(actual_weight_g)) {
-                throw new Error('请输入有效的数字');
-            }
-            
-            if (length_cm <= 0 || width_cm <= 0 || height_cm <= 0 || actual_weight_g <= 0) {
-                throw new Error('所有数值必须大于0');
-            }
+            console.log(`输入值: ${length_cm}厘米 x ${width_cm}厘米 x ${height_cm}厘米, ${actual_weight_g}克`);
             
             // 计算
             const { 
@@ -200,8 +277,13 @@ document.addEventListener('DOMContentLoaded', function() {
 尺寸类型：${size_type}
 计费价格：$${price.toFixed(2)}`;
             
-            document.getElementById('shippingResult').textContent = result_text;
+            // 显示结果
+            const displaySuccess = displayResult('shippingResult', result_text);
+            if (!displaySuccess) return;
+            
+            console.log("物流配送费计算成功");
         } catch (error) {
+            console.error("物流配送费计算失败:", error);
             alert(error.message || '计算出错，请检查输入');
         }
     }
@@ -226,20 +308,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 计算和显示佣金
     function calculateAndDisplayCommission() {
+        console.log("开始计算佣金");
         try {
             // 获取输入值
-            const price_input = document.getElementById('price').value;
+            const price = getNumberInput('price', '商品售价必须是大于0的数值');
             
-            // 验证输入
-            if (!price_input) {
-                throw new Error('请输入商品售价');
-            }
-            
-            const price = parseFloat(price_input);
-            
-            if (isNaN(price) || price < 0) {
-                throw new Error('请输入有效的价格');
-            }
+            console.log(`商品售价: $${price}`);
             
             // 计算佣金
             const commission_fee = calculateCommission(price);
@@ -267,9 +341,13 @@ document.addEventListener('DOMContentLoaded', function() {
 固定手续费：$${fixed_fee.toFixed(2)}
 总佣金费用：$${total_fee.toFixed(2)}`;
 
-            document.getElementById('commissionResult').textContent = result_text;
+            // 显示结果
+            const displaySuccess = displayResult('commissionResult', result_text);
+            if (!displaySuccess) return;
             
+            console.log("佣金计算成功");
         } catch (error) {
+            console.error("佣金计算失败:", error);
             alert(error.message || '计算出错');
         }
     }
@@ -391,23 +469,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 计算并显示基本仓储费
     function calculateAndDisplayBaseStorage() {
+        console.log("开始计算基础仓储费");
         try {
             // 获取输入值
-            const length_cm = parseFloat(document.getElementById('storageLength').value);
-            const width_cm = parseFloat(document.getElementById('storageWidth').value);
-            const height_cm = parseFloat(document.getElementById('storageHeight').value);
-            const start_date = document.getElementById('startDate').value;
-            const end_date = document.getElementById('endDate').value;
-            const quantity = parseInt(document.getElementById('quantity').value);
+            const length_cm = getNumberInput('storageLength', '装箱长度必须是大于0的数值');
+            const width_cm = getNumberInput('storageWidth', '装箱宽度必须是大于0的数值');
+            const height_cm = getNumberInput('storageHeight', '装箱高度必须是大于0的数值');
+            const start_date = getDateInput('startDate', '请选择开始日期');
+            const end_date = getDateInput('endDate', '请选择结束日期');
+            const quantity = getNumberInput('quantity', '商品数量必须是大于0的整数');
             
-            // 验证输入
-            if (isNaN(length_cm) || isNaN(width_cm) || isNaN(height_cm) || isNaN(quantity)) {
-                throw new Error('请输入有效的数值');
-            }
-            
-            if (length_cm <= 0 || width_cm <= 0 || height_cm <= 0 || quantity <= 0) {
-                throw new Error('尺寸和数量必须大于0');
-            }
+            console.log(`仓储计算输入: ${length_cm}厘米 x ${width_cm}厘米 x ${height_cm}厘米, 从${start_date}到${end_date}, ${quantity}个商品`);
             
             // 计算基础仓储费
             const { 
@@ -428,31 +500,30 @@ document.addEventListener('DOMContentLoaded', function() {
 存储时间：${storage_days} 天 (${storage_weeks} 周)
 基础仓储费用：$${total_storage_cost.toFixed(2)}`;
 
-            document.getElementById('storageResult').textContent = result_text;
+            // 显示结果
+            const displaySuccess = displayResult('storageResult', result_text);
+            if (!displaySuccess) return;
+            
+            console.log("基础仓储费计算成功");
         } catch (error) {
+            console.error("基础仓储费计算失败:", error);
             alert(error.message || '计算出错');
         }
     }
     
     // 计算并显示全部仓储费
     function calculateAndDisplayStorage() {
+        console.log("开始计算全部仓储费");
         try {
             // 获取输入值
-            const length_cm = parseFloat(document.getElementById('storageLength').value);
-            const width_cm = parseFloat(document.getElementById('storageWidth').value);
-            const height_cm = parseFloat(document.getElementById('storageHeight').value);
-            const start_date = document.getElementById('startDate').value;
-            const end_date = document.getElementById('endDate').value;
-            const quantity = parseInt(document.getElementById('quantity').value);
+            const length_cm = getNumberInput('storageLength', '装箱长度必须是大于0的数值');
+            const width_cm = getNumberInput('storageWidth', '装箱宽度必须是大于0的数值');
+            const height_cm = getNumberInput('storageHeight', '装箱高度必须是大于0的数值');
+            const start_date = getDateInput('startDate', '请选择开始日期');
+            const end_date = getDateInput('endDate', '请选择结束日期');
+            const quantity = getNumberInput('quantity', '商品数量必须是大于0的整数');
             
-            // 验证输入
-            if (isNaN(length_cm) || isNaN(width_cm) || isNaN(height_cm) || isNaN(quantity)) {
-                throw new Error('请输入有效的数值');
-            }
-            
-            if (length_cm <= 0 || width_cm <= 0 || height_cm <= 0 || quantity <= 0) {
-                throw new Error('尺寸和数量必须大于0');
-            }
+            console.log(`全部仓储费计算输入: ${length_cm}厘米 x ${width_cm}厘米 x ${height_cm}厘米, 从${start_date}到${end_date}, ${quantity}个商品`);
             
             // 计算基础仓储费
             const { 
@@ -482,8 +553,13 @@ document.addEventListener('DOMContentLoaded', function() {
 长期存储附加费：$${additional_cost.toFixed(2)}
 总仓储费用：$${total_cost.toFixed(2)}`;
 
-            document.getElementById('storageResult').textContent = result_text;
+            // 显示结果
+            const displaySuccess = displayResult('storageResult', result_text);
+            if (!displaySuccess) return;
+            
+            console.log("全部仓储费计算成功");
         } catch (error) {
+            console.error("全部仓储费计算失败:", error);
             alert(error.message || '计算出错');
         }
     }
@@ -492,106 +568,157 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 更新总费用显示
     function updateTotalDisplay() {
-        document.getElementById('shippingFee').textContent = feeData.shippingFee.toFixed(2);
-        document.getElementById('storageFee').textContent = feeData.storageFee.toFixed(2);
-        document.getElementById('commissionFee').textContent = feeData.commissionFee.toFixed(2);
-        
-        const total = feeData.shippingFee + feeData.storageFee + feeData.commissionFee;
-        document.getElementById('totalFee').textContent = total.toFixed(2);
+        try {
+            const shippingFeeElement = document.getElementById('shippingFee');
+            const storageFeeElement = document.getElementById('storageFee');
+            const commissionFeeElement = document.getElementById('commissionFee');
+            const totalFeeElement = document.getElementById('totalFee');
+            
+            if (shippingFeeElement) shippingFeeElement.textContent = feeData.shippingFee.toFixed(2);
+            if (storageFeeElement) storageFeeElement.textContent = feeData.storageFee.toFixed(2);
+            if (commissionFeeElement) commissionFeeElement.textContent = feeData.commissionFee.toFixed(2);
+            
+            const total = feeData.shippingFee + feeData.storageFee + feeData.commissionFee;
+            if (totalFeeElement) totalFeeElement.textContent = total.toFixed(2);
+        } catch (error) {
+            console.error("更新总费用显示失败:", error);
+        }
     }
     
     // 计算总费用
     function calculateTotal() {
-        const total = feeData.shippingFee + feeData.storageFee + feeData.commissionFee;
-        document.getElementById('totalFee').textContent = total.toFixed(2);
-        
-        alert(`已计算总费用：$${total.toFixed(2)}`);
+        try {
+            const total = feeData.shippingFee + feeData.storageFee + feeData.commissionFee;
+            
+            const totalFeeElement = document.getElementById('totalFee');
+            if (totalFeeElement) totalFeeElement.textContent = total.toFixed(2);
+            
+            alert(`已计算总费用：$${total.toFixed(2)}`);
+            console.log("总费用计算成功: $" + total.toFixed(2));
+        } catch (error) {
+            console.error("计算总费用失败:", error);
+            alert("计算总费用失败: " + error.message);
+        }
     }
     
     // 清除所有费用
     function clearAllFees() {
-        feeData.shippingFee = 0.0;
-        feeData.storageFee = 0.0;
-        feeData.commissionFee = 0.0;
-        
-        updateTotalDisplay();
-        
-        // 清除结果区域
-        document.getElementById('shippingResult').textContent = '';
-        document.getElementById('storageResult').textContent = '';
-        document.getElementById('commissionResult').textContent = '';
-        
-        alert('已清除所有费用数据');
+        try {
+            feeData.shippingFee = 0.0;
+            feeData.storageFee = 0.0;
+            feeData.commissionFee = 0.0;
+            
+            updateTotalDisplay();
+            
+            // 清除结果区域
+            const shippingResultElement = document.getElementById('shippingResult');
+            const storageResultElement = document.getElementById('storageResult');
+            const commissionResultElement = document.getElementById('commissionResult');
+            
+            if (shippingResultElement) shippingResultElement.textContent = '';
+            if (storageResultElement) storageResultElement.textContent = '';
+            if (commissionResultElement) commissionResultElement.textContent = '';
+            
+            alert('已清除所有费用数据');
+            console.log("已清除所有费用数据");
+        } catch (error) {
+            console.error("清除费用数据失败:", error);
+            alert("清除费用数据失败: " + error.message);
+        }
     }
     
-    // 事件监听器
-    document.getElementById('calculateShipping').addEventListener('click', calculateAndDisplayShipping);
-    document.getElementById('calculateCommission').addEventListener('click', calculateAndDisplayCommission);
-    document.getElementById('calculateStorage').addEventListener('click', calculateAndDisplayStorage);
-    document.getElementById('calculateBaseStorage').addEventListener('click', calculateAndDisplayBaseStorage);
-    document.getElementById('calculateTotal').addEventListener('click', calculateTotal);
-    document.getElementById('clearAll').addEventListener('click', clearAllFees);
-    
-    // 添加计算按钮也同时显示规则的功能
-    document.getElementById('calculateShipping').addEventListener('click', function() {
-        if (document.getElementById('shippingResult').textContent) {
-            setTimeout(() => {
-                sliderWrapper.classList.add('show-rules');
-                updateButtonVisibility(); // 更新按钮状态
-                // 添加提示效果
-                showRulesTip('物流配送费规则');
-            }, 800);
+    // 绑定事件监听器
+    function bindEventListeners() {
+        console.log("绑定事件监听器");
+        
+        // 获取所有计算按钮
+        const calculateShippingBtn = document.getElementById('calculateShipping');
+        const calculateCommissionBtn = document.getElementById('calculateCommission');
+        const calculateStorageBtn = document.getElementById('calculateStorage');
+        const calculateBaseStorageBtn = document.getElementById('calculateBaseStorage');
+        const calculateTotalBtn = document.getElementById('calculateTotal');
+        const clearAllBtn = document.getElementById('clearAll');
+        
+        // 绑定事件处理函数
+        if (calculateShippingBtn) {
+            calculateShippingBtn.addEventListener('click', calculateAndDisplayShipping);
+            console.log("物流配送费计算按钮已绑定");
+        } else {
+            console.warn("找不到物流配送费计算按钮");
         }
-    });
-    
-    document.getElementById('calculateCommission').addEventListener('click', function() {
-        if (document.getElementById('commissionResult').textContent) {
-            setTimeout(() => {
-                sliderWrapper.classList.add('show-rules');
-                updateButtonVisibility(); // 更新按钮状态
-                // 添加提示效果
-                showRulesTip('佣金计算规则');
-            }, 800);
+        
+        if (calculateCommissionBtn) {
+            calculateCommissionBtn.addEventListener('click', calculateAndDisplayCommission);
+            console.log("佣金计算按钮已绑定");
+        } else {
+            console.warn("找不到佣金计算按钮");
         }
-    });
-    
-    document.getElementById('calculateStorage').addEventListener('click', function() {
-        if (document.getElementById('storageResult').textContent) {
-            setTimeout(() => {
-                sliderWrapper.classList.add('show-rules');
-                updateButtonVisibility(); // 更新按钮状态
-                // 添加提示效果
-                showRulesTip('仓储费用规则');
-            }, 800);
+        
+        if (calculateStorageBtn) {
+            calculateStorageBtn.addEventListener('click', calculateAndDisplayStorage);
+            console.log("全部仓储费计算按钮已绑定");
+        } else {
+            console.warn("找不到全部仓储费计算按钮");
         }
-    });
+        
+        if (calculateBaseStorageBtn) {
+            calculateBaseStorageBtn.addEventListener('click', calculateAndDisplayBaseStorage);
+            console.log("基础仓储费计算按钮已绑定");
+        } else {
+            console.warn("找不到基础仓储费计算按钮");
+        }
+        
+        if (calculateTotalBtn) {
+            calculateTotalBtn.addEventListener('click', calculateTotal);
+            console.log("总费用计算按钮已绑定");
+        } else {
+            console.warn("找不到总费用计算按钮");
+        }
+        
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', clearAllFees);
+            console.log("清除所有费用按钮已绑定");
+        } else {
+            console.warn("找不到清除所有费用按钮");
+        }
+        
+        console.log("已禁用自动跳转到费用规则的功能");
+    }
     
     // 显示规则提示
     function showRulesTip(ruleType) {
-        const tipElement = document.createElement('div');
-        tipElement.className = 'rules-tip';
-        tipElement.textContent = `查看${ruleType}`;
-        document.body.appendChild(tipElement);
-        
-        setTimeout(() => {
-            tipElement.classList.add('show');
-        }, 100);
-        
-        setTimeout(() => {
-            tipElement.classList.remove('show');
+        try {
+            const tipElement = document.createElement('div');
+            tipElement.className = 'rules-tip';
+            tipElement.textContent = `查看${ruleType}`;
+            document.body.appendChild(tipElement);
+            
             setTimeout(() => {
-                document.body.removeChild(tipElement);
-            }, 500);
-        }, 2000);
+                tipElement.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                tipElement.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(tipElement);
+                }, 500);
+            }, 2000);
+        } catch (error) {
+            console.warn("显示规则提示失败:", error);
+        }
     }
 
     // 保存计算结果 - 由于认证已禁用，显示消息
-    saveButton.addEventListener('click', function() {
-        showSaveMessage('error', '保存功能已禁用');
-    });
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            showSaveMessage('error', '保存功能已禁用');
+        });
+    }
     
     // 显示保存消息
     function showSaveMessage(type, message) {
+        if (!saveMessage) return;
+        
         saveMessage.textContent = message;
         saveMessage.style.display = 'block';
         
@@ -606,4 +733,10 @@ document.addEventListener('DOMContentLoaded', function() {
             saveMessage.style.display = 'none';
         }, 3000);
     }
+    
+    // 绑定所有事件监听器
+    bindEventListeners();
+    
+    // 初始化计算器
+    console.log("FBA计算器初始化完成");
 }); 

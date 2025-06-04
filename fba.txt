@@ -411,7 +411,7 @@ class FeeCalculator(tk.Tk):
             elif chargeable_weight <= 48:
                 return 6.81
             else:
-                additional_weight = (chargeable_weight - 48) / 0.5
+                additional_weight = (chargeable_weight - 48) / 8
                 return 6.92 + additional_weight * 0.16
 
     def calculate_and_display_package(self):
