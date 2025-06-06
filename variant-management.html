@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>变体管理 - 亚马逊卖家工具集</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .variant-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+        .variant-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .category-header {
+            background: linear-gradient(135deg, #E8F0E3, #D8E4D0);
+            border-radius: 10px 10px 0 0;
+            padding: 15px;
+            margin-bottom: 0;
+        }
+        .category-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+            color: #7FAC6C;
+        }
+        .variant-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #FCFDF9;
+        }
+        .variant-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #E8F0E3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .variant-item:hover {
+            background-color: #F5F9F0;
+        }
+        .variant-item:last-child {
+            border-bottom: none;
+        }
+        .variant-code {
+            font-family: 'Courier New', monospace;
+            background-color: #F8FAF4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #506651;
+        }
+        .add-variant-form {
+            background-color: #F8FAF4;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .preview-section {
+            background-color: #FCFDF9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px dashed #D8E4D0;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .preview-item {
+            background-color: #E8F0E3;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #506651;
+            border: 1px solid #D8E4D0;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        .preview-item:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .preview-category {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-category-title {
+            background-color: #f1f8f1;
+            color: #28a745;
+            padding: 10px 15px;
+            border-radius: 8px 8px 0 0;
+            margin: 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .preview-category-items {
+            padding: 10px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 250px;
+        }
+        .api-config {
+            background-color: #FFF9E6;
+            border: 1px solid #F0E68C;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .clickable-option {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            user-select: none;
+        }
+
+        .clickable-option:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .clickable-option.selected {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+
+        .sku-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+        }
+
+        .sku-item {
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.25rem;
+            background-color: white;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .sku-item:last-child {
+            margin-bottom: 0;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected {
+            background-color: #28a745;
+        }
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-sm-custom {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- 页面标题 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">
+                            <i class="bi bi-gear-fill text-success me-2"></i>
+                            SKU生成器与变体管理
+                        </h1>
+                        <p class="text-muted mb-0">生成SKU并管理变体数据，支持Google Sheets同步</p>
+                    </div>
+                    <div>
+                        <a href="index.html" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回主页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API配置区域 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="api-config">
+                    <h5 class="mb-3">
+                        <i class="bi bi-cloud-arrow-up"></i> Google Sheets 配置
+                    </h5>
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <label for="apiKeyInput" class="form-label">API 密钥</label>
+                            <input type="password" class="form-control" id="apiKeyInput" placeholder="请输入Google Sheets API密钥">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-primary" id="saveApiKey">
+                                    <i class="bi bi-save"></i> 保存
+                                </button>
+                                <button type="button" class="btn btn-outline-info" id="testConnection">
+                                    <i class="bi bi-wifi"></i> 测试连接
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <span class="status-indicator" id="connectionStatus"></span>
+                            <span id="connectionText">未连接</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 预览区域 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="preview-section">
+                    <h5 class="mb-3">
+                        <i class="bi bi-eye"></i> 变体预览
+                    </h5>
+                    <div class="row mb-3">
+                        <div class="col-12 d-flex justify-content-between align-items-center">
+                            <span class="text-muted">所有变体类别并排展示</span>
+                            <button type="button" class="btn btn-outline-success btn-sm" id="refreshPreviewBtn">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新预览
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">颜色</h6>
+                                <div id="previewColors" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">动物</h6>
+                                <div id="previewAnimals" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">职业</h6>
+                                <div id="previewProfessions" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">幽默</h6>
+                                <div id="previewHumor" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">角色</h6>
+                                <div id="previewRoles" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">成衣</h6>
+                                <div id="previewFestivals" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">配件</h6>
+                                <div id="previewStyles" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="preview-category">
+                                <h6 class="preview-category-title">充气</h6>
+                                <div id="previewCrowdSizes" class="preview-category-items"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="previewLoading" class="loading-spinner">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="mt-2 text-muted">正在加载变体数据...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- SKU生成区域 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-gear-fill"></i> SKU生成器
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">节日</label>
+                                <select class="form-select" id="skuFestival">
+                                    <option value="">请选择节日</option>
+                                    <option value="万圣节">万圣节</option>
+                                    <option value="圣诞节">圣诞节</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                 <label class="form-label">类别</label>
+                                 <select class="form-select" id="skuCategory">
+                                     <option value="">请选择类别</option>
+                                     <option value="animal">动物</option>
+                                     <option value="profession">职业</option>
+                                     <option value="humor">幽默</option>
+                                     <option value="role">角色</option>
+                                 </select>
+                                 <select class="form-select mt-2" id="skuCategoryValue" disabled>
+                                     <option value="">请先选择类别</option>
+                                 </select>
+                             </div>
+                            <div class="col-md-3">
+                                <label class="form-label">款式</label>
+                                <select class="form-select" id="skuStyle">
+                                    <option value="">请选择款式类型</option>
+                                    <option value="festivals">成衣</option>
+                                    <option value="styles">配件</option>
+                                    <option value="crowdSizes">充气</option>
+                                </select>
+                                <select class="form-select mt-2" id="skuStyleValue" disabled>
+                                    <option value="">请先选择款式类型</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">人群</label>
+                                <div id="skuCrowdOptions" class="option-group">
+                                    <div class="clickable-option" data-value="婴童">婴童</div>
+                                    <div class="clickable-option" data-value="幼童">幼童</div>
+                                    <div class="clickable-option" data-value="女童">女童</div>
+                                    <div class="clickable-option" data-value="男童">男童</div>
+                                    <div class="clickable-option" data-value="儿童">儿童</div>
+                                    <div class="clickable-option" data-value="女性">女性</div>
+                                    <div class="clickable-option" data-value="男性">男性</div>
+                                    <div class="clickable-option" data-value="成人">成人</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">尺码</label>
+                                <div id="skuSizeOptions" class="option-group">
+                                    <div class="clickable-option" data-value="6M">6M</div>
+                                    <div class="clickable-option" data-value="12M">12M</div>
+                                    <div class="clickable-option" data-value="XS">XS</div>
+                                    <div class="clickable-option" data-value="S">S</div>
+                                    <div class="clickable-option" data-value="M">M</div>
+                                    <div class="clickable-option" data-value="L">L</div>
+                                    <div class="clickable-option" data-value="XL">XL</div>
+                                    <div class="clickable-option" data-value="2X">2X</div>
+                                    <div class="clickable-option" data-value="S/M">S/M</div>
+                                    <div class="clickable-option" data-value="L/XL">L/XL</div>
+                                    <div class="clickable-option" data-value="O">O</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">颜色</label>
+                                <div id="skuColorOptions" class="option-group">
+                                    <!-- 颜色选项将从预览数据动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12 text-center">
+                                <button type="button" class="btn btn-success btn-lg" id="generateVariantSKU">
+                                    <i class="bi bi-gear-fill me-2"></i>生成SKU
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">父SKU</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="copyParentSKU" title="复制父SKU">
+                                            复制
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="variantParentSKU" class="text-center fs-4 fw-bold text-primary">等待生成...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">SKU组合 <span id="variantSkuCount" class="badge bg-secondary">0</span></h6>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-warning me-2" id="undoDeleteSKU" title="撤销删除" style="display: none; font-weight: bold; color: #fff;">
+                                                撤销删除
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="copyAllSKUs" title="复制所有SKU组合">
+                                                复制全部
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="variantSkuResults" class="sku-results"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量操作区域 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-tools"></i> 批量操作
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-info me-2" id="syncAllBtn">
+                                    <i class="bi bi-arrow-clockwise"></i> 同步所有变体
+                                </button>
+                                <button type="button" class="btn btn-warning me-2" id="clearCacheBtn">
+                                    <i class="bi bi-trash"></i> 清除缓存
+                                </button>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <button type="button" class="btn btn-outline-secondary" id="exportConfigBtn">
+                                    <i class="bi bi-download"></i> 导出配置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                <strong class="me-auto">通知</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                操作完成
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="google-sheets-manager.js"></script>
+    <script src="variant-manager.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        // 全局变量
+        let variantManager;
+        let googleSheetsManager;
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // 初始化Google Sheets管理器
+                googleSheetsManager = new GoogleSheetsManager();
+                window.googleSheetsManager = googleSheetsManager;
+                
+                // 初始化变体管理器
+                variantManager = new VariantManager();
+                await variantManager.initialize();
+                
+                // 绑定事件
+                bindEvents();
+                
+                // 加载API密钥并自动连接
+                await loadSavedApiKey();
+                
+                // 加载所有变体数据（用于管理区域） - 已移除
+                // await loadAllVariants();
+                
+                // 加载所有变体预览
+                await previewAllVariants();
+                
+                // 初始化SKU生成器选项
+                await initializeVariantSKUOptions();
+                
+                console.log('变体管理页面初始化完成');
+            } catch (error) {
+                console.error('页面初始化失败:', error);
+                showNotification('页面初始化失败: ' + error.message, 'error');
+            }
+        });
+        
+        // 绑定事件
+        function bindEvents() {
+            // API密钥保存
+            document.getElementById('saveApiKey').addEventListener('click', saveApiKey);
+            
+            // 测试连接
+            document.getElementById('testConnection').addEventListener('click', testConnection);
+            
+            // 刷新预览
+            document.getElementById('refreshPreviewBtn').addEventListener('click', previewAllVariants);
+            
+            // 批量操作
+            // 注意：批量操作按钮的ID可能已更改，如果之前是 syncAllVariantsBtn, clearCache, exportConfig，则无需修改
+            // 如果按钮ID确实是 syncAllBtn, clearCacheBtn, exportConfigBtn，则保留以下代码
+            const syncButton = document.getElementById('syncAllBtn') || document.getElementById('syncAllVariants');
+            if (syncButton) syncButton.addEventListener('click', syncAllVariants);
+            
+            const clearButton = document.getElementById('clearCacheBtn') || document.getElementById('clearCache');
+            if (clearButton) clearButton.addEventListener('click', clearCache);
+
+            const exportButton = document.getElementById('exportConfigBtn') || document.getElementById('exportConfig');
+            if (exportButton) exportButton.addEventListener('click', exportConfig);
+
+            // 复制功能
+            document.getElementById('copyParentSKU').addEventListener('click', copyParentSKU);
+            document.getElementById('copyAllSKUs').addEventListener('click', copyAllVariantSKUs);
+            
+            // 撤销删除功能
+            document.getElementById('undoDeleteSKU').addEventListener('click', undoDeleteVariantSKU);
+
+            // SKU生成器事件
+            bindVariantSKUEvents();
+        }
+        
+        // 加载保存的API密钥并自动连接
+        async function loadSavedApiKey() {
+            // 默认API密钥
+            const defaultApiKey = 'AIzaSyAJfpSZruf18lKh5YALv13uZ43SBepverM';
+            const savedKey = localStorage.getItem('googleSheetsApiKey') || defaultApiKey;
+            
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+                // 设置API密钥到管理器
+                try {
+                    await googleSheetsManager.setApiKey(savedKey);
+                    // 自动测试连接
+                    const isConnected = await googleSheetsManager.testConnection();
+                    if (isConnected) {
+                        updateConnectionStatus(true);
+                        // 如果使用的是默认密钥且本地没有保存，则自动保存
+                        if (!localStorage.getItem('googleSheetsApiKey')) {
+                            localStorage.setItem('googleSheetsApiKey', defaultApiKey);
+                            showNotification('默认API密钥自动填充并连接成功', 'success');
+                        } else {
+                            showNotification('API密钥自动加载并连接成功', 'success');
+                        }
+                    } else {
+                        updateConnectionStatus(false);
+                        showNotification('API密钥已加载但连接失败，请检查密钥是否有效', 'warning');
+                    }
+                } catch (error) {
+                    console.error('自动连接失败:', error);
+                    updateConnectionStatus(false);
+                    showNotification('API密钥自动连接失败: ' + error.message, 'error');
+                }
+            } else {
+                updateConnectionStatus(false);
+            }
+        }
+        
+        // 保存API密钥
+        async function saveApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showNotification('请输入API密钥', 'error');
+                return;
+            }
+            
+            try {
+                await googleSheetsManager.setApiKey(apiKey);
+                showNotification('API密钥保存成功', 'success');
+                updateConnectionStatus(true);
+            } catch (error) {
+                console.error('保存API密钥失败:', error);
+                showNotification('保存API密钥失败: ' + error.message, 'error');
+                updateConnectionStatus(false);
+            }
+        }
+        
+        // 测试连接
+        async function testConnection() {
+            try {
+                const isConnected = await googleSheetsManager.testConnection();
+                if (isConnected) {
+                    showNotification('连接测试成功', 'success');
+                    updateConnectionStatus(true);
+                } else {
+                    showNotification('连接测试失败', 'error');
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                console.error('连接测试失败:', error);
+                showNotification('连接测试失败: ' + error.message, 'error');
+                updateConnectionStatus(false);
+            }
+        }
+        
+        // 更新连接状态
+        function updateConnectionStatus(isConnected) {
+            const statusIndicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
+            
+            if (isConnected) {
+                statusIndicator.className = 'status-indicator status-connected';
+                statusText.textContent = '已连接';
+            } else {
+                statusIndicator.className = 'status-indicator status-disconnected';
+                statusText.textContent = '未连接';
+            }
+        }
+        
+        // 预览所有变体
+        async function previewAllVariants() {
+            const loadingEl = document.getElementById('previewLoading');
+            const categories = [
+                { id: 'colors', displayName: '颜色', elementId: 'previewColors' },
+                { id: 'animals', displayName: '动物', elementId: 'previewAnimals' },
+                { id: 'professions', displayName: '职业', elementId: 'previewProfessions' },
+                { id: 'humor', displayName: '幽默', elementId: 'previewHumor' },
+                { id: 'roles', displayName: '角色', elementId: 'previewRoles' },
+                { id: 'festivals', displayName: '成衣', elementId: 'previewFestivals' },
+                { id: 'styles', displayName: '配件', elementId: 'previewStyles' },
+                { id: 'crowdSizes', displayName: '充气', elementId: 'previewCrowdSizes' }
+            ];
+            
+            try {
+                loadingEl.style.display = 'block';
+                
+                // 清空所有预览区域
+                categories.forEach(category => {
+                    const el = document.getElementById(category.elementId);
+                    if (el) el.innerHTML = '';
+                });
+                
+                // 并行加载所有类别的变体
+                const promises = categories.map(async category => {
+                    try {
+                        const variants = await googleSheetsManager.getVariants(category.id);
+                        const containerEl = document.getElementById(category.elementId);
+                        
+                        if (!containerEl) return;
+                        
+                        if (Object.keys(variants).length === 0) {
+                            containerEl.innerHTML = '<div class="text-center text-muted p-2">暂无数据</div>';
+                            return;
+                        }
+                        
+                        // 显示变体数据
+                        Object.entries(variants).forEach(([name, code]) => {
+                            const item = document.createElement('div');
+                            item.className = 'preview-item';
+                            item.innerHTML = `
+                                <div class="fw-bold">${name}</div>
+                                <small class="text-muted">${code}</small>
+                            `;
+                            containerEl.appendChild(item);
+                        });
+                    } catch (error) {
+                        console.error(`加载${category.displayName}变体失败:`, error);
+                        const containerEl = document.getElementById(category.elementId);
+                        if (containerEl) {
+                            containerEl.innerHTML = '<div class="text-center text-danger p-2">加载失败</div>';
+                        }
+                    }
+                });
+                
+                await Promise.all(promises);
+                loadingEl.style.display = 'none';
+                
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                console.error('预览变体失败:', error);
+                showNotification('预览变体失败: ' + error.message, 'error');
+                // 显示错误信息在每个预览区域
+                categories.forEach(category => {
+                    const el = document.getElementById(category.elementId);
+                    if (el) {
+                        el.innerHTML = '<div class="text-center text-danger p-2">加载失败，请检查网络连接和API配置</div>';
+                    }
+                });
+            }
+        }
+        
+        // 加载所有变体数据 - 相关函数已移除
+        // async function loadAllVariants() { ... }
+        
+        // 加载特定类别的变体数据 - 相关函数已移除
+        // async function loadCategoryVariants(category) { ... }
+        
+        // 获取类别对应的列表ID - 相关函数已移除
+        // function getCategoryListId(category) { ... }
+        
+        // 添加变体（已禁用）- 相关函数已移除
+        // async function addVariant(category) { ... }
+        
+        // 编辑变体（简单实现）- 相关函数已移除
+        // function editVariant(category, name, code) { ... }
+        
+        // 删除变体（简单实现）- 相关函数已移除
+        // function deleteVariant(category, name) { ... }
+
+        
+        // 同步所有变体
+        async function syncAllVariants() {
+            try {
+                await variantManager.syncAllVariants();
+                showNotification('同步完成', 'success');
+                await loadAllVariants();
+            } catch (error) {
+                console.error('同步失败:', error);
+                showNotification('同步失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 清除缓存
+        function clearCache() {
+            if (confirm('确定要清除所有缓存数据吗？')) {
+                googleSheetsManager.clearCache();
+                showNotification('缓存已清除', 'success');
+            }
+        }
+        
+        // 导出配置
+        function exportConfig() {
+            const config = googleSheetsManager.exportConfig();
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'variant-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('配置已导出', 'success');
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const toast = document.getElementById('notificationToast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastHeader = toast.querySelector('.toast-header i');
+            
+            toastMessage.textContent = message;
+            
+            // 根据类型设置图标和样式
+            toastHeader.className = `bi me-2 ${
+                type === 'success' ? 'bi-check-circle-fill text-success' :
+                type === 'error' ? 'bi-exclamation-triangle-fill text-danger' :
+                type === 'warning' ? 'bi-exclamation-triangle-fill text-warning' :
+                'bi-info-circle-fill text-primary'
+            }`;
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+        // SKU生成器相关函数
+        async function initializeVariantSKUOptions() {
+            try {
+                // 初始化颜色选项
+                await populateVariantColorOptions();
+                
+                console.log('SKU生成器选项初始化完成');
+            } catch (error) {
+                console.error('初始化SKU生成器选项失败:', error);
+            }
+        }
+
+        async function populateVariantSelect(selector, category) {
+            const selectElement = document.querySelector(selector);
+            if (!selectElement) return;
+            
+            try {
+                const variants = await googleSheetsManager.getVariants(category);
+                
+                // 清空现有选项（保留默认选项）
+                const defaultOption = selectElement.querySelector('option[value=""]');
+                selectElement.innerHTML = '';
+                if (defaultOption) {
+                    selectElement.appendChild(defaultOption);
+                }
+                
+                // 添加变体选项
+                Object.entries(variants).forEach(([name, code]) => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${name} (${code})`;
+                    selectElement.appendChild(option);
+                });
+            } catch (error) {
+                console.error(`填充${category}选项失败:`, error);
+            }
+        }
+
+        async function populateVariantColorOptions() {
+            const colorContainer = document.getElementById('skuColorOptions');
+            if (!colorContainer) return;
+            
+            try {
+                const colors = await googleSheetsManager.getVariants('colors');
+                colorContainer.innerHTML = '';
+                
+                Object.entries(colors).forEach(([name, code]) => {
+                    const colorOption = document.createElement('div');
+                    colorOption.className = 'clickable-option';
+                    colorOption.setAttribute('data-value', code);
+                    colorOption.textContent = `${name} (${code})`;
+                    colorContainer.appendChild(colorOption);
+                });
+            } catch (error) {
+                console.error('填充颜色选项失败:', error);
+            }
+        }
+
+        function bindVariantSKUEvents() {
+            // 类别选择联动事件
+            document.getElementById('skuCategory').addEventListener('change', async function(e) {
+                const categoryType = e.target.value;
+                const categoryValueSelect = document.getElementById('skuCategoryValue');
+                
+                if (!categoryType) {
+                    categoryValueSelect.disabled = true;
+                    categoryValueSelect.innerHTML = '<option value="">请先选择类别</option>';
+                    return;
+                }
+                
+                try {
+                    categoryValueSelect.disabled = false;
+                    categoryValueSelect.innerHTML = '<option value="">加载中...</option>';
+                    
+                    const categoryMap = {
+                        'animal': 'animals',
+                        'profession': 'professions',
+                        'humor': 'humor',
+                        'role': 'roles'
+                    };
+                    
+                    const variants = await googleSheetsManager.getVariants(categoryMap[categoryType]);
+                    
+                    categoryValueSelect.innerHTML = '<option value="">请选择具体项目</option>';
+                    Object.entries(variants).forEach(([name, code]) => {
+                        const option = document.createElement('option');
+                        option.value = code;
+                        option.textContent = `${name} (${code})`;
+                        categoryValueSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('加载类别选项失败:', error);
+                    categoryValueSelect.innerHTML = '<option value="">加载失败</option>';
+                }
+            });
+            
+            // 款式选择联动事件
+            document.getElementById('skuStyle').addEventListener('change', async function(e) {
+                const styleType = e.target.value;
+                const styleValueSelect = document.getElementById('skuStyleValue');
+                
+                if (!styleType) {
+                    styleValueSelect.disabled = true;
+                    styleValueSelect.innerHTML = '<option value="">请先选择款式类型</option>';
+                    return;
+                }
+                
+                try {
+                    styleValueSelect.disabled = false;
+                    styleValueSelect.innerHTML = '<option value="">加载中...</option>';
+                    
+                    const variants = await googleSheetsManager.getVariants(styleType);
+                    
+                    styleValueSelect.innerHTML = '<option value="">请选择具体款式</option>';
+                    Object.entries(variants).forEach(([name, code]) => {
+                        const option = document.createElement('option');
+                        option.value = code;
+                        option.textContent = `${name} (${code})`;
+                        styleValueSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('加载款式选项失败:', error);
+                    styleValueSelect.innerHTML = '<option value="">加载失败</option>';
+                }
+            });
+            
+            // 可点击选项事件
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('clickable-option')) {
+                    const parent = e.target.parentElement;
+                    const isMultiSelect = parent.id === 'skuSizeOptions' || parent.id === 'skuColorOptions' || parent.id === 'skuCrowdOptions';
+                    
+                    if (isMultiSelect) {
+                        // 多选模式
+                        e.target.classList.toggle('selected');
+                    } else {
+                        // 单选模式
+                        parent.querySelectorAll('.clickable-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        e.target.classList.add('selected');
+                    }
+                }
+            });
+            
+            // 生成SKU按钮事件
+            document.getElementById('generateVariantSKU').addEventListener('click', generateVariantSKU);
+        }
+
+        function getVariantSelectedOptions() {
+            const options = {
+                festival: document.getElementById('skuFestival').value,
+                categoryType: document.getElementById('skuCategory').value,
+                categoryValue: document.getElementById('skuCategoryValue').value,
+                styleType: document.getElementById('skuStyle').value,
+                style: document.getElementById('skuStyleValue').value,
+                crowd: [],
+                sizes: [],
+                colors: []
+            };
+            
+            // 获取人群选择
+            document.querySelectorAll('#skuCrowdOptions .clickable-option.selected').forEach(el => {
+                options.crowd.push(el.getAttribute('data-value'));
+            });
+            
+            // 获取尺码选择
+            document.querySelectorAll('#skuSizeOptions .clickable-option.selected').forEach(el => {
+                options.sizes.push(el.getAttribute('data-value'));
+            });
+            
+            // 获取颜色选择
+            document.querySelectorAll('#skuColorOptions .clickable-option.selected').forEach(el => {
+                options.colors.push(el.getAttribute('data-value'));
+            });
+            
+            return options;
+        }
+
+        function generateVariantSKU() {
+            try {
+                const options = getVariantSelectedOptions();
+                
+                // 验证必填项
+                if (!options.festival) {
+                    showNotification('请选择节日', 'error');
+                    return;
+                }
+                
+                // 验证类别选择
+                if (!options.categoryType) {
+                    showNotification('请选择类别类型', 'error');
+                    return;
+                }
+                
+                if (!options.categoryValue) {
+                    showNotification('请选择具体的类别项目', 'error');
+                    return;
+                }
+                
+                if (!options.styleType) {
+                    showNotification('请选择款式类型', 'error');
+                    return;
+                }
+                
+                if (!options.style) {
+                    showNotification('请选择具体款式', 'error');
+                    return;
+                }
+                
+                if (options.crowd.length === 0) {
+                    showNotification('请选择人群', 'error');
+                    return;
+                }
+                
+                if (options.sizes.length === 0) {
+                    showNotification('请选择尺码', 'error');
+                    return;
+                }
+                
+                if (options.colors.length === 0) {
+                    showNotification('请选择颜色', 'error');
+                    return;
+                }
+                
+                // 生成父SKU
+                const festivalCode = getFestivalCode(options.festival);
+                const categoryCode = options.categoryValue;
+                const styleCode = getStyleCode(options.style);
+                
+                const parentSKU = `${festivalCode}${categoryCode}${styleCode}`;
+                
+                // 显示父SKU
+                document.getElementById('variantParentSKU').textContent = parentSKU;
+                
+                // 生成子SKU组合
+                const skuCombinations = [];
+                
+                options.crowd.forEach(crowd => {
+                    const crowdCode = getCrowdCode(crowd);
+                    options.colors.forEach(color => {
+                        options.sizes.forEach(size => {
+                            const childSKU = `${parentSKU}${crowdCode}-${color}-${size}`;
+                            skuCombinations.push(childSKU);
+                        });
+                    });
+                });
+                
+                // 显示SKU结果
+                displayVariantSKUResults(skuCombinations);
+                
+                showNotification(`成功生成 ${skuCombinations.length} 个SKU组合`, 'success');
+                
+            } catch (error) {
+                console.error('生成SKU失败:', error);
+                showNotification('生成SKU失败: ' + error.message, 'error');
+            }
+        }
+
+        function displayVariantSKUResults(skuCombinations) {
+            const resultsContainer = document.getElementById('variantSkuResults');
+            const countElement = document.getElementById('variantSkuCount');
+            
+            resultsContainer.innerHTML = '';
+            countElement.textContent = skuCombinations.length;
+            
+            // 清空删除历史并隐藏撤销按钮
+            deletedSKUs = [];
+            document.getElementById('undoDeleteSKU').style.display = 'none';
+            
+            skuCombinations.forEach((sku, index) => {
+                const skuItem = document.createElement('div');
+                skuItem.className = 'sku-item d-flex justify-content-between align-items-center';
+                skuItem.setAttribute('data-sku', sku);
+                skuItem.setAttribute('data-index', index);
+                
+                const skuText = document.createElement('span');
+                skuText.className = 'sku-text';
+                skuText.textContent = sku;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-outline-danger';
+                deleteBtn.innerHTML = '删除';
+                deleteBtn.onclick = () => deleteSingleVariantSKU(index, sku);
+                
+                skuItem.appendChild(skuText);
+                skuItem.appendChild(deleteBtn);
+                resultsContainer.appendChild(skuItem);
+            });
+        }
+
+        // 辅助函数
+        function getFestivalCode(festival) {
+            const festivalMap = {
+                '万圣节': 'H',
+                '圣诞节': 'C'
+            };
+            return festivalMap[festival] || 'XX';
+        }
+
+        function getStyleCode(style) {
+            // 直接返回从下拉框选择的具体款式代码
+            return style || 'XX';
+        }
+
+        function getCrowdCode(crowd) {
+            const crowdMap = {
+                '婴童': 'I',
+                '幼童': 'T',
+                '女童': 'G',
+                '男童': 'B',
+                '儿童': 'K',
+                '女性': 'W',
+                '男性': 'M',
+                '成人': 'A'
+            };
+            return crowdMap[crowd] || 'XX';
+        }
+
+        // 复制父SKU
+        function copyParentSKU() {
+            const parentSKU = document.getElementById('variantParentSKU').textContent;
+            if (parentSKU === '等待生成...') {
+                showNotification('请先生成SKU', 'warning');
+                return;
+            }
+            
+            navigator.clipboard.writeText(parentSKU).then(() => {
+                showNotification('父SKU已复制到剪贴板', 'success');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                showNotification('复制失败，请手动复制', 'error');
+            });
+        }
+
+        // 复制所有SKU组合
+        function copyAllVariantSKUs() {
+            const skuResults = document.getElementById('variantSkuResults');
+            const skuItems = skuResults.querySelectorAll('.sku-item');
+            
+            if (skuItems.length === 0) {
+                showNotification('请先生成SKU组合', 'warning');
+                return;
+            }
+            
+            const skuList = Array.from(skuItems).map(item => {
+                const skuText = item.querySelector('.sku-text');
+                return skuText ? skuText.textContent.trim() : '';
+            }).filter(sku => sku).join('\n');
+            
+            navigator.clipboard.writeText(skuList).then(() => {
+                showNotification(`已复制 ${skuItems.length} 个SKU组合到剪贴板`, 'success');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                showNotification('复制失败，请手动复制', 'error');
+            });
+        }
+
+        // 全局变量存储删除的SKU信息
+        let deletedSKUs = [];
+
+        // 删除单个SKU
+        function deleteSingleVariantSKU(index, sku) {
+            const skuItem = document.querySelector(`[data-index="${index}"]`);
+            if (skuItem) {
+                // 保存删除的SKU信息
+                deletedSKUs.push({
+                    sku: sku,
+                    index: index,
+                    element: skuItem.cloneNode(true)
+                });
+                
+                // 从DOM中移除
+                skuItem.remove();
+                
+                // 更新计数
+                updateVariantSKUCount();
+                
+                // 显示撤销按钮
+                document.getElementById('undoDeleteSKU').style.display = 'inline-block';
+                
+                showNotification('SKU已删除，可点击撤销删除恢复', 'warning');
+            }
+        }
+
+        // 撤销删除SKU
+        function undoDeleteVariantSKU() {
+            if (deletedSKUs.length === 0) {
+                showNotification('没有可撤销的删除操作', 'warning');
+                return;
+            }
+            
+            // 恢复最后删除的SKU
+            const lastDeleted = deletedSKUs.pop();
+            const resultsContainer = document.getElementById('variantSkuResults');
+            
+            // 重新绑定删除事件
+            const deleteBtn = lastDeleted.element.querySelector('button');
+            deleteBtn.onclick = () => deleteSingleVariantSKU(lastDeleted.index, lastDeleted.sku);
+            
+            resultsContainer.appendChild(lastDeleted.element);
+            
+            // 更新计数
+            updateVariantSKUCount();
+            
+            // 如果没有更多删除的SKU，隐藏撤销按钮
+            if (deletedSKUs.length === 0) {
+                document.getElementById('undoDeleteSKU').style.display = 'none';
+            }
+            
+            showNotification('SKU已恢复', 'success');
+        }
+
+        // 更新SKU计数
+        function updateVariantSKUCount() {
+            const skuItems = document.querySelectorAll('#variantSkuResults .sku-item');
+            document.getElementById('variantSkuCount').textContent = skuItems.length;
+        }
+    </script>
+</body>
+</html>

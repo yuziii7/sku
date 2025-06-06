@@ -124,18 +124,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 初始化下拉菜单和选项
-    function initializeOptions() {
-        // 初始化动物下拉框
-        populateSelect('#animal', getAllAnimals());
+    async function initializeOptions() {
+        // 异步初始化动物下拉框
+        const animals = await getAllAnimals();
+        await populateSelect('#animal', animals);
         
-        // 初始化职业下拉框
-        populateSelect('#profession', getAllProfessions());
+        // 异步初始化职业下拉框
+        const professions = await getAllProfessions();
+        await populateSelect('#profession', professions);
         
-        // 初始化幽默下拉框
-        populateSelect('#humor', getAllHumors());
+        // 异步初始化幽默下拉框
+        const humors = await getAllHumors();
+        await populateSelect('#humor', humors);
         
-        // 初始化角色下拉框
-        populateSelect('#role', getAllRoles());
+        // 异步初始化角色下拉框
+        const roles = await getAllRoles();
+        await populateSelect('#role', roles);
         
         // 初始化人群选项
         populateCheckboxes('#crowdOptions', getCrowdOptions(), 'crowd');
@@ -148,15 +152,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 填充下拉菜单
-    function populateSelect(selector, options) {
+    async function populateSelect(selector, options) {
         const select = document.querySelector(selector);
         if (!select) return;
         
         select.innerHTML = '<option value="">请选择</option>';
+        
+        // 获取对应类别的Google Sheets数据以显示预览信息
+        let categoryVariants = {};
+        try {
+            if (window.googleSheetsManager && window.googleSheetsManager.isConnected) {
+                const categoryMap = {
+                    '#animal': 'animals',
+                    '#profession': 'professions', 
+                    '#humor': 'humor',
+                    '#role': 'roles'
+                };
+                const category = categoryMap[selector];
+                if (category) {
+                    categoryVariants = await window.googleSheetsManager.getVariants(category);
+                }
+            }
+        } catch (error) {
+            console.error('获取类别预览数据失败:', error);
+        }
+        
         options.forEach(option => {
             const optEl = document.createElement('option');
             optEl.value = option;
-            optEl.textContent = option;
+            
+            // 如果有Google Sheets数据，显示名称和代码
+            if (categoryVariants[option]) {
+                optEl.textContent = `${option} (${categoryVariants[option]})`;
+            } else {
+                optEl.textContent = option;
+            }
+            
             select.appendChild(optEl);
         });
     }
@@ -197,23 +228,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 获取所有动物选项
-    function getAllAnimals() {
+    // 从Google Sheets获取动物选项
+    async function getAllAnimals() {
+        try {
+            if (window.googleSheetsManager && window.googleSheetsManager.isConnected) {
+                const variants = await window.googleSheetsManager.getVariants('animals');
+                const sheetOptions = Object.keys(variants);
+                const customOptions = data.customOptions.animal.map(item => item[0]);
+                return [...new Set([...Object.keys(data.animalMapping), ...sheetOptions, ...customOptions])];
+            }
+        } catch (error) {
+            console.error('获取Google Sheets动物数据失败:', error);
+        }
         return [...Object.keys(data.animalMapping), ...data.customOptions.animal.map(item => item[0])];
     }
     
-    // 获取所有职业选项
-    function getAllProfessions() {
+    // 从Google Sheets获取职业选项
+    async function getAllProfessions() {
+        try {
+            if (window.googleSheetsManager && window.googleSheetsManager.isConnected) {
+                const variants = await window.googleSheetsManager.getVariants('professions');
+                const sheetOptions = Object.keys(variants);
+                const customOptions = data.customOptions.profession.map(item => item[0]);
+                return [...new Set([...Object.keys(data.professionMapping), ...sheetOptions, ...customOptions])];
+            }
+        } catch (error) {
+            console.error('获取Google Sheets职业数据失败:', error);
+        }
         return [...Object.keys(data.professionMapping), ...data.customOptions.profession.map(item => item[0])];
     }
     
-    // 获取所有幽默选项
-    function getAllHumors() {
+    // 从Google Sheets获取幽默选项
+    async function getAllHumors() {
+        try {
+            if (window.googleSheetsManager && window.googleSheetsManager.isConnected) {
+                const variants = await window.googleSheetsManager.getVariants('humor');
+                const sheetOptions = Object.keys(variants);
+                const customOptions = data.customOptions.humor.map(item => item[0]);
+                return [...new Set([...Object.keys(data.humorMapping), ...sheetOptions, ...customOptions])];
+            }
+        } catch (error) {
+            console.error('获取Google Sheets幽默数据失败:', error);
+        }
         return [...Object.keys(data.humorMapping), ...data.customOptions.humor.map(item => item[0])];
     }
     
-    // 获取所有角色选项
-    function getAllRoles() {
+    // 从Google Sheets获取角色选项
+    async function getAllRoles() {
+        try {
+            if (window.googleSheetsManager && window.googleSheetsManager.isConnected) {
+                const variants = await window.googleSheetsManager.getVariants('roles');
+                const sheetOptions = Object.keys(variants);
+                const customOptions = data.customOptions.role.map(item => item[0]);
+                return [...new Set([...Object.keys(data.roleMapping), ...sheetOptions, ...customOptions])];
+            }
+        } catch (error) {
+            console.error('获取Google Sheets角色数据失败:', error);
+        }
         return [...Object.keys(data.roleMapping), ...data.customOptions.role.map(item => item[0])];
     }
     
@@ -251,13 +322,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 获取节日代码
     function getFestivalCode(festival) {
-        // 优先查自定义
-        const customFestival = data.customOptions.festival.find(item => item[0] === festival);
-        if (customFestival) {
-            return customFestival[1];
-        }
-        // 再查内置
-        return data.festivalMapping[festival] || "XX";
+        const festivalMap = {
+            '万圣节': 'H',
+            '圣诞节': 'C'
+        };
+        return festivalMap[festival] || 'XX';
     }
     
     // 获取类别代码
@@ -341,28 +410,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const festival = document.querySelector('input[name="festival"]:checked')?.value || '';
         
         // 获取类别选择
-        const selectedAnimal = document.querySelector('#animal').value;
-        const selectedProfession = document.querySelector('#profession').value;
-        const selectedHumor = document.querySelector('#humor').value;
-        const selectedRole = document.querySelector('#role').value;
-        
-        // 确定选中的类别和对应的映射
-        let category = "";
-        let selectedItem = "";
-        
-        if (selectedAnimal) {
-            category = "animal";
-            selectedItem = selectedAnimal;
-        } else if (selectedProfession) {
-            category = "profession";
-            selectedItem = selectedProfession;
-        } else if (selectedHumor) {
-            category = "humor";
-            selectedItem = selectedHumor;
-        } else if (selectedRole) {
-            category = "role";
-            selectedItem = selectedRole;
-        }
+        const categoryType = document.querySelector('#category')?.value || '';
+        const categoryValue = document.querySelector('#categoryValue')?.value || '';
         
         // 获取款式选择
         const style = document.querySelector('input[name="style"]:checked')?.value || '';
@@ -395,8 +444,13 @@ document.addEventListener('DOMContentLoaded', function() {
             parentSKUElement.style.color = "#cc0000";
             return;
         }
-        if (!category) {
-            parentSKUElement.textContent = "错误: 必须选择一个类别!";
+        if (!categoryType) {
+            parentSKUElement.textContent = "错误: 必须选择类别类型!";
+            parentSKUElement.style.color = "#cc0000";
+            return;
+        }
+        if (!categoryValue) {
+            parentSKUElement.textContent = "错误: 必须选择具体的类别项目!";
             parentSKUElement.style.color = "#cc0000";
             return;
         }
@@ -408,7 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 生成父SKU
         const festivalCode = getFestivalCode(festival);
-        const categoryCode = getCategoryCode(category, selectedItem);
+        const categoryCode = categoryValue; // 直接使用选择的代码值
         const styleCode = getStyleCode(style);
         const parentSKU = `${festivalCode}${categoryCode}${styleCode}`;
         
@@ -835,13 +889,106 @@ document.addEventListener('DOMContentLoaded', function() {
         return labels[category] || category;
     }
     
+    // 手动同步变体数据
+    async function handleSyncFromSheets() {
+        const syncBtn = document.querySelector('#syncFromSheets');
+        if (!syncBtn) return;
+        
+        const originalText = syncBtn.innerHTML;
+        syncBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>同步中...';
+        syncBtn.disabled = true;
+        
+        try {
+            await syncVariantsFromSheets();
+            
+            // 重新初始化选项以显示新数据
+            await initializeOptions();
+            
+            // 显示成功消息
+            showSyncMessage('同步完成！变体数据已更新，类别选项已刷新', 'success');
+        } catch (error) {
+            console.error('手动同步失败:', error);
+            showSyncMessage('同步失败: ' + error.message, 'error');
+        } finally {
+            syncBtn.innerHTML = originalText;
+            syncBtn.disabled = false;
+        }
+    }
+    
+    // 显示同步消息
+    function showSyncMessage(message, type) {
+        // 创建消息元素
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(messageDiv);
+        
+        // 3秒后自动移除
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 3000);
+    }
+    
     // 初始化事件监听器
     function initEventListeners() {
         // 类别互斥选择
         handleCategorySelection();
         
+        // 绑定类别选择联动
+        const categorySelect = document.querySelector('#category');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', async function() {
+                const categoryType = this.value;
+                const categoryValueSelect = document.querySelector('#categoryValue');
+                
+                if (categoryType && categoryValueSelect) {
+                    categoryValueSelect.disabled = true;
+                    categoryValueSelect.innerHTML = '<option value="">加载中...</option>';
+                    
+                    try {
+                        let options = [];
+                        switch(categoryType) {
+                            case 'animal':
+                                options = await getAllAnimals();
+                                break;
+                            case 'profession':
+                                options = await getAllProfessions();
+                                break;
+                            case 'humor':
+                                options = await getAllHumors();
+                                break;
+                            case 'role':
+                                options = await getAllRoles();
+                                break;
+                        }
+                        await populateSelect('#categoryValue', options);
+                        categoryValueSelect.disabled = false;
+                    } catch (error) {
+                        console.error('加载类别选项失败:', error);
+                        categoryValueSelect.innerHTML = '<option value="">加载失败</option>';
+                    }
+                } else if (categoryValueSelect) {
+                    categoryValueSelect.disabled = true;
+                    categoryValueSelect.innerHTML = '<option value="">请先选择类别</option>';
+                }
+            });
+        }
+        
         // 生成SKU按钮
         document.querySelector('#generateSKU').addEventListener('click', generateSKU);
+        
+        // 同步变体数据按钮
+        const syncBtn = document.querySelector('#syncFromSheets');
+        if (syncBtn) {
+            syncBtn.addEventListener('click', handleSyncFromSheets);
+        }
         
         // SKU点击删除
         document.querySelector('#skuResults').addEventListener('click', deleteSingleSKU);
@@ -867,13 +1014,88 @@ document.addEventListener('DOMContentLoaded', function() {
         showSaveMessage('error', '保存功能已被禁用');
     }
     
+    // 从Google Sheets同步变体数据
+    async function syncVariantsFromSheets() {
+        try {
+            // 检查是否有Google Sheets管理器
+            if (typeof window.googleSheetsManager === 'undefined') {
+                console.log('Google Sheets管理器未加载，跳过同步');
+                return;
+            }
+            
+            const sheetsManager = window.googleSheetsManager;
+            
+            // 检查API密钥是否配置
+            await sheetsManager.loadApiKey();
+            if (!sheetsManager.isConnected) {
+                console.log('Google Sheets未连接，跳过同步');
+                return;
+            }
+            
+            console.log('开始从Google Sheets同步变体数据...');
+            
+            // 获取所有变体数据
+            const variants = await sheetsManager.getVariants();
+            
+            if (variants && Object.keys(variants).length > 0) {
+                // 更新本地数据映射
+                if (variants.colors && variants.colors.length > 0) {
+                    variants.colors.forEach(color => {
+                        if (color.name && color.code && !data.colorMapping[color.name]) {
+                            data.colorMapping[color.name] = color.code;
+                        }
+                    });
+                }
+                
+                if (variants.animals && variants.animals.length > 0) {
+                    variants.animals.forEach(animal => {
+                        if (animal.name && animal.code && !data.animalMapping[animal.name]) {
+                            data.animalMapping[animal.name] = animal.code;
+                        }
+                    });
+                }
+                
+                if (variants.professions && variants.professions.length > 0) {
+                    variants.professions.forEach(profession => {
+                        if (profession.name && profession.code && !data.professionMapping[profession.name]) {
+                            data.professionMapping[profession.name] = profession.code;
+                        }
+                    });
+                }
+                
+                if (variants.humors && variants.humors.length > 0) {
+                    variants.humors.forEach(humor => {
+                        if (humor.name && humor.code && !data.humorMapping[humor.name]) {
+                            data.humorMapping[humor.name] = humor.code;
+                        }
+                    });
+                }
+                
+                if (variants.roles && variants.roles.length > 0) {
+                    variants.roles.forEach(role => {
+                        if (role.name && role.code && !data.roleMapping[role.name]) {
+                            data.roleMapping[role.name] = role.code;
+                        }
+                    });
+                }
+                
+                console.log('Google Sheets变体数据同步完成');
+            }
+        } catch (error) {
+            console.error('同步Google Sheets数据失败:', error);
+        }
+    }
+    
     // 初始化
-    function init() {
+    async function init() {
         console.log("初始化SKU生成器...");
         
         try {
             // 加载自定义选项
             loadCustomOptions();
+            
+            // 从Google Sheets同步变体数据
+            await syncVariantsFromSheets();
             
             // 初始化选项
             initializeOptions();
@@ -900,4 +1122,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 启动应用
     init();
-}); 
+});
