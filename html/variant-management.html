@@ -6,7 +6,7 @@
     <title>变体管理 - 亚马逊卖家工具集</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../css/styles.css">
     <style>
         .variant-card {
             transition: transform 0.3s, box-shadow 0.3s;
@@ -363,13 +363,10 @@
                             <div class="col-md-3">
                                 <label class="form-label">款式</label>
                                 <select class="form-select" id="skuStyle">
-                                    <option value="">请选择款式类型</option>
-                                    <option value="festivals">成衣</option>
-                                    <option value="styles">配件</option>
-                                    <option value="crowdSizes">充气</option>
-                                </select>
-                                <select class="form-select mt-2" id="skuStyleValue" disabled>
-                                    <option value="">请先选择款式类型</option>
+                                    <option value="">请选择款式</option>
+                                    <option value="A">成衣</option>
+                                    <option value="B">配件</option>
+                                    <option value="C">充气</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -419,7 +416,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="card">
+                                <div class="card mb-3">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">父SKU</h6>
                                         <button type="button" class="btn btn-sm btn-outline-primary" id="copyParentSKU" title="复制父SKU">
@@ -428,6 +425,41 @@
                                     </div>
                                     <div class="card-body">
                                         <div id="variantParentSKU" class="text-center fs-4 fw-bold text-primary">等待生成...</div>
+                                        <!-- Google Sheets 写入确认区域 -->
+                                        <div id="googleSheetsWriteArea" class="mt-3" style="display: none;">
+                                            <div class="alert alert-info d-flex align-items-center mb-2">
+                                                <i class="bi bi-clipboard-data me-2"></i>
+                                                <div class="flex-grow-1">
+                                                    <strong>Google Sheets写入信息</strong>
+                                                    <div class="small text-muted">获取父SKU的手动写入指南</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-info btn-sm" id="writeToSheetsBtn">
+                                                    <i class="bi bi-clipboard me-1"></i>获取写入信息
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="skipWriteBtn">
+                                                    <i class="bi bi-x-circle me-1"></i>跳过
+                                                </button>
+                                            </div>
+                                            <div id="writeProgress" class="mt-2" style="display: none;">
+                                                <div class="progress" style="height: 4px;">
+                                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                                                </div>
+                                                <small class="text-muted">正在准备写入信息...</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">父SKU记录</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="clearParentSKURecords" title="清空记录">
+                                            清空
+                                        </button>
+                                    </div>
+                                    <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+                                        <div id="parentSKURecords" class="text-muted">暂无记录</div>
                                     </div>
                                 </div>
                             </div>
@@ -500,11 +532,67 @@
         </div>
     </div>
 
+    <!-- 父SKU重复确认模态框 -->
+    <div class="modal fade" id="parentSKUConfirmModal" tabindex="-1" aria-labelledby="parentSKUConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="parentSKUConfirmModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>检测到重复的父SKU
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info d-flex align-items-center mb-3">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <div>
+                            <strong>当前基础SKU：</strong><span id="modalBaseSKU" class="fw-bold text-primary ms-2"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <p class="mb-2">该父SKU已存在 <span id="modalCurrentCount" class="badge bg-secondary"></span> 次</p>
+                        <p class="text-muted">请选择您希望的处理方式：</p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card border-success h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-plus-circle-fill text-success fs-2 mb-2"></i>
+                                    <h6 class="card-title text-success">生成新版本</h6>
+                                    <p class="card-text small text-muted">自动生成：</p>
+                                    <code id="modalNewVersion" class="bg-success text-white p-2 rounded d-block"></code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-secondary h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-clockwise text-secondary fs-2 mb-2"></i>
+                                    <h6 class="card-title text-secondary">使用现有版本</h6>
+                                    <p class="card-text small text-muted">继续使用：</p>
+                                    <code id="modalCurrentVersion" class="bg-secondary text-white p-2 rounded d-block"></code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="useCurrentVersionBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i>使用现有版本
+                    </button>
+                    <button type="button" class="btn btn-success" id="generateNewVersionBtn">
+                        <i class="bi bi-plus-circle me-1"></i>生成新版本
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 引入必要的JavaScript文件 -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="google-sheets-manager.js"></script>
-    <script src="variant-manager.js"></script>
-    <script src="script.js"></script>
+    <script src="../js/google-sheets-manager.js"></script>
+    <script src="../js/variant-manager.js"></script>
+    <script src="../js/script.js"></script>
     
     <script>
         // 全局变量
@@ -905,35 +993,7 @@
                 }
             });
             
-            // 款式选择联动事件
-            document.getElementById('skuStyle').addEventListener('change', async function(e) {
-                const styleType = e.target.value;
-                const styleValueSelect = document.getElementById('skuStyleValue');
-                
-                if (!styleType) {
-                    styleValueSelect.disabled = true;
-                    styleValueSelect.innerHTML = '<option value="">请先选择款式类型</option>';
-                    return;
-                }
-                
-                try {
-                    styleValueSelect.disabled = false;
-                    styleValueSelect.innerHTML = '<option value="">加载中...</option>';
-                    
-                    const variants = await googleSheetsManager.getVariants(styleType);
-                    
-                    styleValueSelect.innerHTML = '<option value="">请选择具体款式</option>';
-                    Object.entries(variants).forEach(([name, code]) => {
-                        const option = document.createElement('option');
-                        option.value = code;
-                        option.textContent = `${name} (${code})`;
-                        styleValueSelect.appendChild(option);
-                    });
-                } catch (error) {
-                    console.error('加载款式选项失败:', error);
-                    styleValueSelect.innerHTML = '<option value="">加载失败</option>';
-                }
-            });
+            // 款式选择事件（已简化为单级选择）
             
             // 可点击选项事件
             document.addEventListener('click', function(e) {
@@ -963,8 +1023,7 @@
                 festival: document.getElementById('skuFestival').value,
                 categoryType: document.getElementById('skuCategory').value,
                 categoryValue: document.getElementById('skuCategoryValue').value,
-                styleType: document.getElementById('skuStyle').value,
-                style: document.getElementById('skuStyleValue').value,
+                style: document.getElementById('skuStyle').value,
                 crowd: [],
                 sizes: [],
                 colors: []
@@ -1009,13 +1068,8 @@
                     return;
                 }
                 
-                if (!options.styleType) {
-                    showNotification('请选择款式类型', 'error');
-                    return;
-                }
-                
                 if (!options.style) {
-                    showNotification('请选择具体款式', 'error');
+                    showNotification('请选择款式', 'error');
                     return;
                 }
                 
@@ -1034,15 +1088,83 @@
                     return;
                 }
                 
-                // 生成父SKU
+                // 生成基础父SKU
                 const festivalCode = getFestivalCode(options.festival);
                 const categoryCode = options.categoryValue;
                 const styleCode = getStyleCode(options.style);
                 
-                const parentSKU = `${festivalCode}${categoryCode}${styleCode}`;
+                const baseSKU = `${festivalCode}${categoryCode}${styleCode}`;
                 
+                // 获取或初始化父SKU记录
+                if (!window.parentSKURecords) {
+                    window.parentSKURecords = {};
+                }
+                
+                let parentSKU;
+                
+                // 检查是否已存在相同的基础SKU
+                if (window.parentSKURecords[baseSKU]) {
+                    const currentCount = window.parentSKURecords[baseSKU];
+                    const nextIncrement = currentCount + 1;
+                    
+                    // 设置模态框内容
+                    document.getElementById('modalBaseSKU').textContent = baseSKU;
+                    document.getElementById('modalCurrentCount').textContent = currentCount;
+                    document.getElementById('modalNewVersion').textContent = `${baseSKU}${String(nextIncrement).padStart(3, '0')}`;
+                    document.getElementById('modalCurrentVersion').textContent = `${baseSKU}${String(currentCount).padStart(3, '0')}`;
+                    
+                    // 显示模态框
+                    const modal = new bootstrap.Modal(document.getElementById('parentSKUConfirmModal'));
+                    modal.show();
+                    
+                    // 设置按钮事件监听器
+                    const generateNewBtn = document.getElementById('generateNewVersionBtn');
+                    const useCurrentBtn = document.getElementById('useCurrentVersionBtn');
+                    
+                    // 移除之前的事件监听器（克隆节点方式）
+                    const newGenerateBtn = generateNewBtn.cloneNode(true);
+                    const newUseCurrentBtn = useCurrentBtn.cloneNode(true);
+                    generateNewBtn.parentNode.replaceChild(newGenerateBtn, generateNewBtn);
+                    useCurrentBtn.parentNode.replaceChild(newUseCurrentBtn, useCurrentBtn);
+                    
+                    // 添加新的事件监听器
+                    newGenerateBtn.addEventListener('click', function() {
+                        // 用户选择生成新版本
+                        window.parentSKURecords[baseSKU] = nextIncrement;
+                        parentSKU = `${baseSKU}${String(nextIncrement).padStart(3, '0')}`;
+                        modal.hide();
+                        continueGenerateSKU(parentSKU, options);
+                    });
+                    
+                    newUseCurrentBtn.addEventListener('click', function() {
+                        // 用户选择使用现有版本
+                        parentSKU = `${baseSKU}${String(currentCount).padStart(3, '0')}`;
+                        modal.hide();
+                        continueGenerateSKU(parentSKU, options);
+                    });
+                    
+                    // 提前返回，等待用户选择
+                    return;
+                } else {
+                    // 首次生成该基础SKU
+                    window.parentSKURecords[baseSKU] = 1;
+                    parentSKU = `${baseSKU}${String(1).padStart(3, '0')}`;
+                }
+                
+                continueGenerateSKU(parentSKU, options);
+            } catch (error) {
+                console.error('生成变体SKU时出错:', error);
+                showNotification('生成SKU时出错，请重试', 'error');
+            }
+        }
+        
+        function continueGenerateSKU(parentSKU, options) {
+            try {
                 // 显示父SKU
                 document.getElementById('variantParentSKU').textContent = parentSKU;
+                
+                // 更新父SKU记录显示
+                updateParentSKURecordsDisplay();
                 
                 // 生成子SKU组合
                 const skuCombinations = [];
@@ -1059,6 +1181,9 @@
                 
                 // 显示SKU结果
                 displayVariantSKUResults(skuCombinations);
+                
+                // 显示写入Google Sheets的确认按钮
+                showGoogleSheetsWriteConfirmation(parentSKU, options);
                 
                 showNotification(`成功生成 ${skuCombinations.length} 个SKU组合`, 'success');
                 
@@ -1227,6 +1352,158 @@
             const skuItems = document.querySelectorAll('#variantSkuResults .sku-item');
             document.getElementById('variantSkuCount').textContent = skuItems.length;
         }
+
+        // 更新父SKU记录显示
+        function updateParentSKURecordsDisplay() {
+            const recordsContainer = document.getElementById('parentSKURecords');
+            
+            if (!window.parentSKURecords || Object.keys(window.parentSKURecords).length === 0) {
+                recordsContainer.innerHTML = '<div class="text-muted">暂无记录</div>';
+                return;
+            }
+            
+            let recordsHTML = '';
+            for (const [baseSKU, count] of Object.entries(window.parentSKURecords)) {
+                recordsHTML += `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <span class="fw-bold">${baseSKU}</span>
+                        <span class="badge bg-primary">${count}次</span>
+                    </div>
+                `;
+            }
+            
+            recordsContainer.innerHTML = recordsHTML;
+        }
+
+        // 清空父SKU记录
+        function clearParentSKURecords() {
+            if (confirm('确定要清空所有父SKU记录吗？')) {
+                window.parentSKURecords = {};
+                updateParentSKURecordsDisplay();
+                showNotification('父SKU记录已清空', 'success');
+            }
+        }
+        
+        // 显示Google Sheets写入确认
+        function showGoogleSheetsWriteConfirmation(parentSKU, options) {
+            // 检查是否连接到Google Sheets
+            if (!window.googleSheetsManager || !window.googleSheetsManager.isConnected) {
+                console.log('Google Sheets未连接，跳过写入确认');
+                return;
+            }
+            
+            const writeArea = document.getElementById('googleSheetsWriteArea');
+            writeArea.style.display = 'block';
+            
+            // 移除之前的事件监听器
+            const writeBtn = document.getElementById('writeToSheetsBtn');
+            const skipBtn = document.getElementById('skipWriteBtn');
+            
+            const newWriteBtn = writeBtn.cloneNode(true);
+            const newSkipBtn = skipBtn.cloneNode(true);
+            writeBtn.parentNode.replaceChild(newWriteBtn, writeBtn);
+            skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
+            
+            // 添加新的事件监听器
+            newWriteBtn.addEventListener('click', function() {
+                writeParentSKUToGoogleSheets(parentSKU, options);
+            });
+            
+            newSkipBtn.addEventListener('click', function() {
+                writeArea.style.display = 'none';
+                showNotification('已跳过写入Google Sheets', 'info');
+            });
+        }
+        
+        // 写入父SKU到Google Sheets
+        async function writeParentSKUToGoogleSheets(parentSKU, options) {
+            const progressDiv = document.getElementById('writeProgress');
+            const writeArea = document.getElementById('googleSheetsWriteArea');
+            
+            try {
+                progressDiv.style.display = 'block';
+                
+                // 确定写入的列（根据款式类型）
+                let targetColumn;
+                let columnLetter;
+                
+                // 根据款式确定目标列
+                switch(options.style) {
+                    case 'A': // 成衣
+                        targetColumn = 17; // R列 (0-based index: 17)
+                        columnLetter = 'R';
+                        break;
+                    case 'B': // 配件
+                        targetColumn = 20; // U列 (0-based index: 20)
+                        columnLetter = 'U';
+                        break;
+                    case 'C': // 充气
+                        targetColumn = 23; // X列 (0-based index: 23)
+                        columnLetter = 'X';
+                        break;
+                    default:
+                        throw new Error('未知的款式类型: ' + options.style);
+                }
+                
+                // 读取现有数据以找到下一个可用行
+                const existingData = await window.googleSheetsManager.readSheet('Colors');
+                let nextRow = existingData.length + 1;
+                
+                // 找到该列的下一个空行
+                for (let i = 1; i < existingData.length; i++) {
+                    if (!existingData[i] || !existingData[i][targetColumn]) {
+                        nextRow = i + 1;
+                        break;
+                    }
+                }
+                
+                const sheetRange = `${columnLetter}${nextRow}`;
+                const styleNames = { 'A': '成衣', 'B': '配件', 'C': '充气' };
+                
+                // 由于Google Sheets API写入需要OAuth2认证，我们提供手动复制方案
+                progressDiv.style.display = 'none';
+                
+                // 创建复制提示
+                const copyInfo = `
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-info-circle"></i> 手动写入指南</h6>
+                        <p class="mb-2">由于API权限限制，请手动将以下信息复制到Google Sheets：</p>
+                        <div class="bg-light p-2 rounded mb-2">
+                            <strong>父SKU：</strong> <span class="text-primary">${parentSKU}</span>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="navigator.clipboard.writeText('${parentSKU}')">
+                                <i class="fas fa-copy"></i> 复制
+                            </button>
+                        </div>
+                        <div class="bg-light p-2 rounded mb-2">
+                            <strong>目标位置：</strong> ${styleNames[options.style]}列 ${columnLetter}${nextRow}
+                        </div>
+                        <div class="bg-light p-2 rounded">
+                            <strong>Google Sheets链接：</strong> 
+                            <a href="https://docs.google.com/spreadsheets/d/1bT2cXdcyx91esIfs3sIbq2lDUe1NVZ8LrHSwuAOZqag/edit" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt"></i> 打开工作表
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                writeArea.innerHTML = copyInfo;
+                
+                showNotification(`父SKU "${parentSKU}" 信息已准备，请手动复制到Google Sheets ${styleNames[options.style]}列`, 'info');
+                
+            } catch (error) {
+                console.error('准备写入信息失败:', error);
+                progressDiv.style.display = 'none';
+                showNotification('准备写入信息失败: ' + error.message, 'error');
+            }
+        }
+
+        // 绑定事件监听器
+        document.getElementById('copyParentSKU').addEventListener('click', copyParentSKU);
+        document.getElementById('copyAllSKUs').addEventListener('click', copyAllVariantSKUs);
+        document.getElementById('undoDeleteSKU').addEventListener('click', undoDeleteVariantSKU);
+        document.getElementById('generateVariantSKU').addEventListener('click', generateVariantSKU);
+        document.getElementById('clearParentSKURecords').addEventListener('click', clearParentSKURecords);
+
     </script>
 </body>
 </html>
