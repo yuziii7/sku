@@ -228,7 +228,12 @@
                     <div class="row align-items-end">
                         <div class="col-md-8">
                             <label for="apiKeyInput" class="form-label">API 密钥</label>
-                            <input type="password" class="form-control" id="apiKeyInput" placeholder="请输入Google Sheets API密钥">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="apiKeyInput" placeholder="请输入Google Sheets API密钥">
+                                <button class="btn btn-outline-secondary" type="button" id="copyApiKey" title="复制API密钥">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <div class="d-flex gap-2">
@@ -637,6 +642,9 @@
             // API密钥保存
             document.getElementById('saveApiKey').addEventListener('click', saveApiKey);
             
+            // 复制API密钥
+            document.getElementById('copyApiKey').addEventListener('click', copyApiKey);
+            
             // 测试连接
             document.getElementById('testConnection').addEventListener('click', testConnection);
             
@@ -718,6 +726,34 @@
                 console.error('保存API密钥失败:', error);
                 showNotification('保存API密钥失败: ' + error.message, 'error');
                 updateConnectionStatus(false);
+            }
+        }
+        
+        // 复制API密钥
+        async function copyApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showNotification('没有API密钥可复制', 'warning');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(apiKey);
+                showNotification('API密钥已复制到剪贴板', 'success');
+            } catch (error) {
+                // 如果clipboard API不可用，使用传统方法
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = apiKey;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showNotification('API密钥已复制到剪贴板', 'success');
+                } catch (fallbackError) {
+                    console.error('复制失败:', fallbackError);
+                    showNotification('复制失败，请手动复制', 'error');
+                }
             }
         }
         
@@ -1419,81 +1455,77 @@
         async function writeParentSKUToGoogleSheets(parentSKU, options) {
             const progressDiv = document.getElementById('writeProgress');
             const writeArea = document.getElementById('googleSheetsWriteArea');
+            const styleNames = { 'A': '成衣', 'B': '配件', 'C': '充气' };
             
             try {
                 progressDiv.style.display = 'block';
+                progressDiv.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>正在写入父SKU到Google Sheets...';
                 
-                // 确定写入的列（根据款式类型）
-                let targetColumn;
-                let columnLetter;
-                
-                // 根据款式确定目标列
-                switch(options.style) {
-                    case 'A': // 成衣
-                        targetColumn = 17; // R列 (0-based index: 17)
-                        columnLetter = 'R';
-                        break;
-                    case 'B': // 配件
-                        targetColumn = 20; // U列 (0-based index: 20)
-                        columnLetter = 'U';
-                        break;
-                    case 'C': // 充气
-                        targetColumn = 23; // X列 (0-based index: 23)
-                        columnLetter = 'X';
-                        break;
-                    default:
-                        throw new Error('未知的款式类型: ' + options.style);
+                // 检查API连接状态
+                if (!window.googleSheetsManager.getConnectionStatus().isConnected) {
+                    throw new Error('Google Sheets未连接，请先测试连接');
                 }
                 
-                // 读取现有数据以找到下一个可用行
-                const existingData = await window.googleSheetsManager.readSheet('Colors');
-                let nextRow = existingData.length + 1;
+                // 调用写入方法
+                const result = await window.googleSheetsManager.writeParentSKUToSheet(parentSKU, options.style);
                 
-                // 找到该列的下一个空行
-                for (let i = 1; i < existingData.length; i++) {
-                    if (!existingData[i] || !existingData[i][targetColumn]) {
-                        nextRow = i + 1;
-                        break;
-                    }
-                }
-                
-                const sheetRange = `${columnLetter}${nextRow}`;
-                const styleNames = { 'A': '成衣', 'B': '配件', 'C': '充气' };
-                
-                // 由于Google Sheets API写入需要OAuth2认证，我们提供手动复制方案
                 progressDiv.style.display = 'none';
                 
-                // 创建复制提示
-                const copyInfo = `
-                    <div class="alert alert-info mt-3">
-                        <h6><i class="fas fa-info-circle"></i> 手动写入指南</h6>
-                        <p class="mb-2">由于API权限限制，请手动将以下信息复制到Google Sheets：</p>
+                // 显示成功信息
+                const successInfo = `
+                    <div class="alert alert-success mt-3">
+                        <h6><i class="bi bi-check-circle-fill me-2"></i>写入成功！</h6>
                         <div class="bg-light p-2 rounded mb-2">
-                            <strong>父SKU：</strong> <span class="text-primary">${parentSKU}</span>
-                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="navigator.clipboard.writeText('${parentSKU}')">
-                                <i class="fas fa-copy"></i> 复制
+                            <strong>父SKU：</strong> <span class="text-primary">${result.parentSKU}</span>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="navigator.clipboard.writeText('${result.parentSKU}')">
+                                <i class="bi bi-clipboard"></i> 复制
                             </button>
                         </div>
                         <div class="bg-light p-2 rounded mb-2">
-                            <strong>目标位置：</strong> ${styleNames[options.style]}列 ${columnLetter}${nextRow}
+                            <strong>写入位置：</strong> ${styleNames[options.style]}列 ${result.column}${result.row}
                         </div>
                         <div class="bg-light p-2 rounded">
                             <strong>Google Sheets链接：</strong> 
                             <a href="https://docs.google.com/spreadsheets/d/1bT2cXdcyx91esIfs3sIbq2lDUe1NVZ8LrHSwuAOZqag/edit" target="_blank" class="text-decoration-none">
-                                <i class="fas fa-external-link-alt"></i> 打开工作表
+                                <i class="bi bi-box-arrow-up-right"></i> 查看工作表
                             </a>
                         </div>
                     </div>
                 `;
                 
-                writeArea.innerHTML = copyInfo;
-                
-                showNotification(`父SKU "${parentSKU}" 信息已准备，请手动复制到Google Sheets ${styleNames[options.style]}列`, 'info');
+                writeArea.innerHTML = successInfo;
+                showNotification(`父SKU "${parentSKU}" 已成功写入到Google Sheets ${styleNames[options.style]}列 ${result.column}${result.row}`, 'success');
                 
             } catch (error) {
-                console.error('准备写入信息失败:', error);
+                console.error('写入父SKU失败:', error);
                 progressDiv.style.display = 'none';
-                showNotification('准备写入信息失败: ' + error.message, 'error');
+                
+                // 显示错误信息和备用方案
+                const errorInfo = `
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="bi bi-exclamation-triangle-fill me-2"></i>自动写入失败</h6>
+                        <p class="mb-2">错误信息：${error.message}</p>
+                        <p class="mb-2">请使用以下手动方式：</p>
+                        <div class="bg-light p-2 rounded mb-2">
+                            <strong>父SKU：</strong> <span class="text-primary">${parentSKU}</span>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="navigator.clipboard.writeText('${parentSKU}')">
+                                <i class="bi bi-clipboard"></i> 复制
+                            </button>
+                        </div>
+                        <div class="bg-light p-2 rounded mb-2">
+                            <strong>目标位置：</strong> ${styleNames[options.style]}列（${options.style === 'A' ? 'R' : options.style === 'B' ? 'U' : 'X'}列）
+                        </div>
+                        <div class="bg-light p-2 rounded">
+                            <strong>Google Sheets链接：</strong> 
+                            <a href="https://docs.google.com/spreadsheets/d/1bT2cXdcyx91esIfs3sIbq2lDUe1NVZ8LrHSwuAOZqag/edit" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-box-arrow-up-right"></i> 打开工作表
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                writeArea.innerHTML = errorInfo;
+                showNotification('自动写入失败，请手动复制到Google Sheets', 'warning');
             }
         }
 

@@ -154,7 +154,12 @@ class VariantManager {
                     <div class="row mb-4">
                         <div class="col-md-8">
                             <label class="form-label">Google Sheets API 密钥:</label>
-                            <input type="password" id="apiKeyInput" class="form-control" placeholder="输入您的Google Sheets API密钥" value="AIzaSyAJfpSZruf18lKh5YALv13uZ43SBepverM">
+                            <div class="input-group">
+                                <input type="password" id="apiKeyInput" class="form-control" placeholder="输入您的Google Sheets API密钥" value="AIzaSyAJfpSZruf18lKh5YALv13uZ43SBepverM">
+                                <button class="btn btn-outline-secondary" type="button" id="copyApiKeyBtn" title="复制API密钥">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
                                 需要在Google Cloud Console创建API密钥并启用Google Sheets API
@@ -248,6 +253,9 @@ class VariantManager {
                 this.handleConnect();
             }
         });
+        
+        // 复制API密钥按钮
+        document.getElementById('copyApiKeyBtn')?.addEventListener('click', () => this.handleCopyApiKey());
     }
 
     /**
@@ -305,6 +313,36 @@ class VariantManager {
         } finally {
             syncBtn.innerHTML = originalText;
             syncBtn.disabled = false;
+        }
+    }
+
+    /**
+     * 处理复制API密钥
+     */
+    async handleCopyApiKey() {
+        const apiKey = document.getElementById('apiKeyInput')?.value.trim();
+        if (!apiKey) {
+            this.showMessage('没有API密钥可复制', 'warning');
+            return;
+        }
+        
+        try {
+            await navigator.clipboard.writeText(apiKey);
+            this.showMessage('API密钥已复制到剪贴板', 'success');
+        } catch (error) {
+            // 如果clipboard API不可用，使用传统方法
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = apiKey;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                this.showMessage('API密钥已复制到剪贴板', 'success');
+            } catch (fallbackError) {
+                console.error('复制失败:', fallbackError);
+                this.showMessage('复制失败，请手动复制', 'error');
+            }
         }
     }
 

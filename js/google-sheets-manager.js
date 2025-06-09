@@ -402,6 +402,82 @@ class GoogleSheetsManager {
     }
 
     /**
+     * 写入父SKU到指定列
+     * @param {string} parentSKU - 父SKU
+     * @param {string} styleType - 款式类型 (A/B/C)
+     */
+    async writeParentSKUToSheet(parentSKU, styleType) {
+        if (!this.apiKey) {
+            throw new Error('请先设置API密钥');
+        }
+
+        // 确定目标列
+        let columnLetter;
+        switch(styleType) {
+            case 'A': // 成衣
+                columnLetter = 'R';
+                break;
+            case 'B': // 配件
+                columnLetter = 'U';
+                break;
+            case 'C': // 充气
+                columnLetter = 'X';
+                break;
+            default:
+                throw new Error('未知的款式类型: ' + styleType);
+        }
+
+        try {
+            // 读取现有数据以找到下一个可用行
+            const existingData = await this.readSheet('Colors');
+            let nextRow = 1;
+            
+            // 找到该列的下一个空行
+            for (let i = 0; i < existingData.length; i++) {
+                const rowData = existingData[i];
+                const columnIndex = this.getColumnIndex(columnLetter);
+                
+                if (!rowData || !rowData[columnIndex] || rowData[columnIndex].trim() === '') {
+                    nextRow = i + 1;
+                    break;
+                }
+                
+                if (i === existingData.length - 1) {
+                    nextRow = existingData.length + 1;
+                }
+            }
+            
+            // 如果没有数据，从第2行开始（第1行通常是标题）
+            if (existingData.length === 0) {
+                nextRow = 2;
+            }
+
+            // 写入数据
+            const range = `Colors!${columnLetter}${nextRow}`;
+            const result = await this.updateSheet('Colors', range, [[parentSKU]]);
+            
+            return {
+                success: true,
+                range: range,
+                parentSKU: parentSKU,
+                row: nextRow,
+                column: columnLetter
+            };
+            
+        } catch (error) {
+            console.error('写入父SKU失败:', error);
+            throw new Error(`写入父SKU失败: ${error.message}`);
+        }
+    }
+
+    /**
+     * 获取列索引（A=0, B=1, ...）
+     */
+    getColumnIndex(columnLetter) {
+        return columnLetter.charCodeAt(0) - 65;
+    }
+
+    /**
      * 获取连接状态
      */
     getConnectionStatus() {
