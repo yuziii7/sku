@@ -3,7 +3,7 @@ node_modules/
 
 # 构建产物
 build/
-dist/
+
 coverage/
 
 # 环境变量
